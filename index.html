@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escuela Primaria "Los Niños del Futuro"</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-mortarboard-fill me-2"></i>
+                Escuela Primaria
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#inicio">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#servicios">Servicios</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#nosotros">Nosotros</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contacto">Contacto</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#admisiones">Admisiones</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="inicio">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">Escuela Primaria "Los Niños del Futuro"</h1>
+            <p class="lead mb-4">Formando líderes del mañana con educación de calidad y valores sólidos</p>
+            <a href="#servicios" class="btn btn-primary btn-lg">Conoce Nuestros Servicios</a>
+        </div>
+    </section>
+
+    <!-- Servicios Section -->
+    <section class="py-5" id="servicios">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-lg-8 mx-auto">
+                    <h2 class="display-5 fw-bold text-primary mb-3">Nuestros Servicios Educativos</h2>
+                    <p class="lead text-muted">Ofrecemos una educación integral que desarrolla el potencial de cada estudiante</p>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                <!-- Servicio 1 -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="card service-card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <i class="bi bi-book-fill text-primary" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title fw-bold">Educación Básica</h5>
+                            <p class="card-text">Programa educativo completo de 1° a 6° grado con enfoque en matemáticas, ciencias, lenguaje y estudios sociales.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Servicio 2 -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="card service-card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <i class="bi bi-palette-fill text-success" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title fw-bold">Arte y Cultura</h5>
+                            <p class="card-text">Clases de música, artes plásticas, teatro y danza para desarrollar la creatividad y expresión artística.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Servicio 3 -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="card service-card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <i class="bi bi-heart-pulse-fill text-danger" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title fw-bold">Deportes y Salud</h5>
+                            <p class="card-text">Actividades deportivas, educación física y programas de nutrición para promover un estilo de vida saludable.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Servicio 4 -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="card service-card h-100">
+                        <div class="card-body text-center p-4">
+                            <div class="mb-3">
+                                <i class="bi bi-laptop-fill text-warning" style="font-size: 3rem;"></i>
+                            </div>
+                            <h5 class="card-title fw-bold">Tecnología Educativa</h5>
+                            <p class="card-text">Laboratorio de computación, programación básica y uso de herramientas digitales para el aprendizaje.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer py-5" id="contacto">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Información de Contacto -->
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-geo-alt-fill me-2"></i>
+                        Información de Contacto
+                    </h5>
+                    <p><i class="bi bi-house-fill me-2"></i> Av. Educación 123, Col. Centro</p>
+                    <p><i class="bi bi-telephone-fill me-2"></i> (555) 123-4567</p>
+                    <p><i class="bi bi-envelope-fill me-2"></i> info@escuelaprimaria.edu.mx</p>
+                    <p><i class="bi bi-clock-fill me-2"></i> Lunes a Viernes: 7:00 AM - 3:00 PM</p>
+                </div>
+
+                <!-- Admisiones -->
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-person-plus-fill me-2"></i>
+                        Admisiones
+                    </h5>
+                    <p><strong>Horario de Inscripciones:</strong></p>
+                    <p>Lunes a Viernes: 8:00 AM - 2:00 PM</p>
+                    <p><strong>Documentos Requeridos:</strong></p>
+                    <ul class="list-unstyled">
+                        <li>• Acta de nacimiento</li>
+                        <li>• Cartilla de vacunación</li>
+                        <li>• CURP</li>
+                        <li>• 2 fotografías tamaño infantil</li>
+                    </ul>
+                </div>
+
+                <!-- Datos Académicos -->
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-bold mb-3">
+                        <i class="bi bi-graph-up me-2"></i>
+                        Datos Académicos
+                    </h5>
+                    <p><strong>Matrícula Actual:</strong> 450 estudiantes</p>
+                    <p><strong>Personal Docente:</strong> 25 maestros</p>
+                    <p><strong>Personal Administrativo:</strong> 8 empleados</p>
+                    <p><strong>Promedio de Calificación:</strong> 8.5/10</p>
+                    <p><strong>Año de Fundación:</strong> 1985</p>
+                </div>
+            </div>
+
+            <hr class="my-4">
+
+            <!-- Información Adicional -->
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="mb-2"><strong>Escuela Primaria "Los Niños del Futuro"</strong></p>
+                    <p class="mb-2">Clave SEP: 09DPR1234X | CCT: 09DPR1234X</p>
+                    <p class="mb-0">© 2024 Todos los derechos reservados | Sitio web desarrollado con Bootstrap 5</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
