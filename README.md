@@ -37,7 +37,7 @@ Proyecto/
 - Lazcano Hernandez Gonzalo
 - Sarmiento Bautista Tristan David
 - Garcia Vite Luis Angel
-- Adolfo
+- Adolfo Gutiérrez Nolazco
 
 ## Licencia
 
