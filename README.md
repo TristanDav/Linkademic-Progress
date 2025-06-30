@@ -39,10 +39,10 @@ Proyecto/
 - Garcia Vite Luis Angel
 - Adolfo
 
-## 📝 Licencia
+## Licencia
 
-Este proyecto está bajo desarrollo para uso educativo.
+Este proyecto está bajo desarrollo para uso educativo en la Experiencia Educativa "Ingenieria en Software" por parte de la Universidad Veracruzana.
 
 ---
 
-*Desarrollado con ❤️ para mejorar la educación*
+*Desarrollado con todo el esfuerzo posible para mejorar la educación basica*
