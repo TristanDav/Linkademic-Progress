@@ -10,8 +10,8 @@ Linkademic-Progress es una plataforma web que facilita la comunicación entre pa
 
 - **Dashboard para Padres**: Seguimiento del rendimiento académico de sus hijos
 - **Panel de Maestros**: Administración de alumnos y calificaciones
-- **Sistema de Calificaciones**: Gestión completa de evaluaciones
-- **Reportes Académicos**: Generación de reportes detallados
+- **Sistema de Calificaciones**: Gestión en las evaluaciones y entrega de tareas
+- **Reportes Académicos**: Generación de reportes detallados para lectura de los padres
 - **Interfaz Responsiva**: Diseño adaptativo para todos los dispositivos
 
 ## Tecnologías
