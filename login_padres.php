@@ -68,7 +68,7 @@
             <h2 class="fw-bold mb-2">Acceso para Padres</h2>
             <p class="text-muted mb-0">Ingresa tus datos para acceder al seguimiento académico de tu hijo</p>
         </div>
-        <form>
+        <form id="formLoginPadre">
             <div class="mb-3">
                 <label for="usuario" class="form-label">Usuario o Correo</label>
                 <input type="text" class="form-control" id="usuario" placeholder="Ingresa tu usuario o correo" required>
@@ -84,6 +84,12 @@
     </div>
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.getElementById('formLoginPadre').addEventListener('submit', function(e) {
+            e.preventDefault();
+            window.location.href = 'vista_padres/panel_padre.php';
+        });
+    </script>
 </body>
 
 </html>

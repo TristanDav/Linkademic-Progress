@@ -155,4 +155,24 @@
 .footer i:hover {
     color: #ecf0f1;
     transition: color 0.3s ease;
+}
+
+/* Panel Docente: Accesos rápidos */
+.acceso-panel {
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.acceso-panel:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.15);
+    z-index: 2;
+}
+
+.acceso-panel .card-title {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.acceso-panel .btn {
+    margin-top: 0.5rem;
 } 
