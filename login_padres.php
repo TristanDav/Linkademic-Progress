@@ -11,57 +11,10 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #3498db 0%, #6dd5fa 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .login-card {
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-            background: #fff;
-            padding: 2.5rem 2rem;
-            max-width: 400px;
-            width: 100%;
-        }
-
-        .login-card .form-control {
-            border-radius: 10px;
-        }
-
-        .login-card .btn-primary {
-            width: 100%;
-            border-radius: 10px;
-        }
-
-        .login-icon {
-            font-size: 3.5rem;
-            color: #3498db;
-            margin-bottom: 1rem;
-        }
-
-        .back-link {
-            display: block;
-            margin-top: 1.5rem;
-            text-align: center;
-            color: #3498db;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-
-        .back-link:hover {
-            color: #217dbb;
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles_logins.css">
 </head>
 
-<body>
+<body class="login-padres">
     <div class="login-card mx-auto">
         <div class="text-center mb-4">
             <i class="bi bi-people-fill login-icon"></i>

@@ -1,0 +1,126 @@
+/* Estilos para los formularios de login */
+
+/* Estilos base comunes */
+body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.login-card {
+    border-radius: 20px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
+    background: #fff;
+    padding: 2.5rem 2rem;
+    max-width: 400px;
+    width: 100%;
+}
+
+.login-card .form-control {
+    border-radius: 10px;
+}
+
+.login-card .btn {
+    width: 100%;
+    border-radius: 10px;
+}
+
+.login-icon {
+    font-size: 3.5rem;
+    margin-bottom: 1rem;
+}
+
+.back-link {
+    display: block;
+    margin-top: 1.5rem;
+    text-align: center;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    text-decoration: underline;
+}
+
+/* Login para Padres */
+.login-padres {
+    background: linear-gradient(135deg, #3498db 0%, #6dd5fa 100%);
+}
+
+.login-padres .btn-primary {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.login-padres .btn-primary:hover {
+    background: #217dbb;
+    border-color: #217dbb;
+}
+
+.login-padres .login-icon {
+    color: #3498db;
+}
+
+.login-padres .back-link {
+    color: #3498db;
+}
+
+.login-padres .back-link:hover {
+    color: #217dbb;
+}
+
+/* Login para Docentes */
+.login-docentes {
+    background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
+}
+
+.login-docentes .btn-success {
+    background: #43cea2;
+    border-color: #43cea2;
+}
+
+.login-docentes .btn-success:hover {
+    background: #3bb890;
+    border-color: #3bb890;
+}
+
+.login-docentes .login-icon {
+    color: #43cea2;
+}
+
+.login-docentes .back-link {
+    color: #185a9d;
+}
+
+.login-docentes .back-link:hover {
+    color: #43cea2;
+}
+
+/* Login para Secretarios */
+.login-secretarios {
+    background: linear-gradient(135deg, #6f42c1 0%, #a78bfa 100%);
+}
+
+.login-secretarios .btn-primary {
+    background: #6f42c1;
+    border-color: #6f42c1;
+}
+
+.login-secretarios .btn-primary:hover {
+    background: #5a32a3;
+    border-color: #5a32a3;
+}
+
+.login-secretarios .login-icon {
+    color: #6f42c1;
+}
+
+.login-secretarios .back-link {
+    color: #6f42c1;
+}
+
+.login-secretarios .back-link:hover {
+    color: #5a32a3;
+} 

@@ -10,50 +10,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
-    <style>
-        body {
-            background: linear-gradient(135deg, #43cea2 0%, #185a9d 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-card {
-            border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2);
-            background: #fff;
-            padding: 2.5rem 2rem;
-            max-width: 400px;
-            width: 100%;
-        }
-        .login-card .form-control {
-            border-radius: 10px;
-        }
-        .login-card .btn-success {
-            width: 100%;
-            border-radius: 10px;
-        }
-        .login-icon {
-            font-size: 3.5rem;
-            color: #43cea2;
-            margin-bottom: 1rem;
-        }
-        .back-link {
-            display: block;
-            margin-top: 1.5rem;
-            text-align: center;
-            color: #185a9d;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        .back-link:hover {
-            color: #43cea2;
-            text-decoration: underline;
-        }
-    </style>
+    <link rel="stylesheet" href="css/styles_logins.css">
 </head>
-<body>
+<body class="login-docentes">
     <div class="login-card mx-auto">
         <div class="text-center mb-4">
             <i class="bi bi-person-badge-fill login-icon"></i>
