@@ -1,34 +1,44 @@
 <?php
-// Datos de ejemplo para el panel de secretarios
-$alumnos = [
-    ['id' => 1, 'nombre' => 'Hugo Pablimix Chavez', 'grado' => '5to', 'grupo' => 'A', 'padre' => 'Mami Luisa', 'estado' => 'Activo'],
-    ['id' => 2, 'nombre' => 'María González López', 'grado' => '4to', 'grupo' => 'B', 'padre' => 'Juan González', 'estado' => 'Activo'],
-    ['id' => 3, 'nombre' => 'Carlos Rodríguez Pérez', 'grado' => '6to', 'grupo' => 'A', 'padre' => 'Ana Rodríguez', 'estado' => 'Inactivo'],
-    ['id' => 4, 'nombre' => 'Ana Martínez Silva', 'grado' => '3ro', 'grupo' => 'C', 'padre' => 'Pedro Martínez', 'estado' => 'Activo'],
-];
+session_start();
+require_once '../conexion.php';
 
-$padres = [
-    ['id' => 1, 'nombre' => 'Mami Luisa', 'email' => 'luisa@email.com', 'telefono' => '555-0101', 'hijos' => 1],
-    ['id' => 2, 'nombre' => 'Juan González', 'email' => 'juan@email.com', 'telefono' => '555-0102', 'hijos' => 2],
-    ['id' => 3, 'nombre' => 'Ana Rodríguez', 'email' => 'ana@email.com', 'telefono' => '555-0103', 'hijos' => 1],
-    ['id' => 4, 'nombre' => 'Pedro Martínez', 'email' => 'pedro@email.com', 'telefono' => '555-0104', 'hijos' => 1],
-];
+// Obtener alumnos con grupo y tutor
+$sql = "
+SELECT a.id, u.usuario, u.nombre, u.apellido, u.correo, a.grado_cursa, g.nombre AS grupo_nombre,
+       tu.nombre AS tutor_nombre, tu.apellido AS tutor_apellido
+FROM alumnos a
+JOIN usuarios u ON a.usuario_id = u.id
+LEFT JOIN grupos g ON a.grupo_id = g.id
+LEFT JOIN tutores t ON a.tutor_id = t.id
+LEFT JOIN usuarios tu ON t.usuario_id = tu.id
+ORDER BY u.nombre, u.apellido
+";
+$res = $conexion->query($sql);
+$alumnos = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 
-$docentes = [
-    ['id' => 1, 'nombre' => 'Prof. Luis García', 'materia' => 'Matemáticas', 'grupo' => '5to A', 'estado' => 'Activo'],
-    ['id' => 2, 'nombre' => 'Prof. María López', 'materia' => 'Español', 'grupo' => '4to B', 'estado' => 'Activo'],
-    ['id' => 3, 'nombre' => 'Prof. Carlos Ruiz', 'materia' => 'Ciencias', 'grupo' => '6to A', 'estado' => 'Activo'],
-    ['id' => 4, 'nombre' => 'Prof. Ana Silva', 'materia' => 'Historia', 'grupo' => '3ro C', 'estado' => 'Inactivo'],
-];
+// Obtener padres reales de la BD
+$sql_padres = "SELECT id, nombre, apellido, correo FROM usuarios WHERE rol_id = 1 ORDER BY nombre, apellido";
+$res_padres = $conexion->query($sql_padres);
+$padres = $res_padres ? $res_padres->fetch_all(MYSQLI_ASSOC) : [];
 
-$grupos = [
-    ['grado' => '3ro', 'grupo' => 'A', 'alumnos' => 25, 'docente' => 'Prof. García'],
-    ['grado' => '3ro', 'grupo' => 'B', 'alumnos' => 23, 'docente' => 'Prof. López'],
-    ['grado' => '4to', 'grupo' => 'A', 'alumnos' => 26, 'docente' => 'Prof. Ruiz'],
-    ['grado' => '4to', 'grupo' => 'B', 'alumnos' => 24, 'docente' => 'Prof. Silva'],
-    ['grado' => '5to', 'grupo' => 'A', 'alumnos' => 25, 'docente' => 'Prof. García'],
-    ['grado' => '6to', 'grupo' => 'A', 'alumnos' => 27, 'docente' => 'Prof. Ruiz'],
-];
+// (Opcional) Obtener número de hijos por padre
+$hijos_por_padre = [];
+$res_hijos = $conexion->query("SELECT padre_id, COUNT(*) as hijos FROM alumnos GROUP BY padre_id");
+if ($res_hijos) {
+    while ($row = $res_hijos->fetch_assoc()) {
+        $hijos_por_padre[$row['padre_id']] = $row['hijos'];
+    }
+}
+
+// Obtener docentes reales de la BD
+$sql_docentes = "SELECT id, usuario, nombre, apellido, correo FROM usuarios WHERE rol_id = 2 ORDER BY apellido, nombre";
+$res_docentes = $conexion->query($sql_docentes);
+$docentes = $res_docentes ? $res_docentes->fetch_all(MYSQLI_ASSOC) : [];
+
+// Obtener grupos reales de la BD
+$sql_grupos = "SELECT g.id, g.nombre, u.nombre AS docente_nombre, u.apellido AS docente_apellido FROM grupos g LEFT JOIN usuarios u ON g.docente_id = u.id ORDER BY g.nombre";
+$res_grupos = $conexion->query($sql_grupos);
+$grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -144,48 +154,34 @@ $grupos = [
                         <i class="bi bi-people me-2"></i>
                         Gestión de Alumnos
                     </h2>
-                    <button class="btn btn-primary">
+                    <a href="registrar_alumnos.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nuevo Alumno
-                    </button>
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Usuario</th>
                                 <th>Nombre</th>
+                                <th>Correo</th>
                                 <th>Grado</th>
                                 <th>Grupo</th>
-                                <th>Padre/Tutor</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                <th>Tutor</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($alumnos as $alumno): ?>
                             <tr>
-                                <td><?= $alumno['id'] ?></td>
-                                <td><strong><?= $alumno['nombre'] ?></strong></td>
-                                <td><?= $alumno['grado'] ?></td>
-                                <td><?= $alumno['grupo'] ?></td>
-                                <td><?= $alumno['padre'] ?></td>
-                                <td>
-                                    <span class="badge bg-<?= $alumno['estado'] == 'Activo' ? 'success' : 'danger' ?>">
-                                        <?= $alumno['estado'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
+                                <td><?= htmlspecialchars($alumno['id']) ?></td>
+                                <td><?= htmlspecialchars($alumno['usuario']) ?></td>
+                                <td><strong><?= htmlspecialchars($alumno['nombre'] . ' ' . $alumno['apellido']) ?></strong></td>
+                                <td><?= htmlspecialchars($alumno['correo']) ?></td>
+                                <td><?= htmlspecialchars($alumno['grado_cursa']) ?></td>
+                                <td><?= htmlspecialchars($alumno['grupo_nombre'] ?? 'Sin grupo') ?></td>
+                                <td><?= htmlspecialchars(($alumno['tutor_nombre'] ?? '') . ' ' . ($alumno['tutor_apellido'] ?? '')) ?: 'Sin tutor' ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -201,10 +197,10 @@ $grupos = [
                         <i class="bi bi-person-heart me-2"></i>
                         Gestión de Padres
                     </h2>
-                    <button class="btn btn-primary">
+                    <a href="registrar_padres.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nuevo Padre
-                    </button>
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
@@ -212,8 +208,7 @@ $grupos = [
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
-                                <th>Email</th>
-                                <th>Teléfono</th>
+                                <th>Correo</th>
                                 <th>Hijos</th>
                                 <th>Acciones</th>
                             </tr>
@@ -221,23 +216,16 @@ $grupos = [
                         <tbody>
                             <?php foreach ($padres as $padre): ?>
                             <tr>
-                                <td><?= $padre['id'] ?></td>
-                                <td><strong><?= $padre['nombre'] ?></strong></td>
-                                <td><?= $padre['email'] ?></td>
-                                <td><?= $padre['telefono'] ?></td>
+                                <td><?= htmlspecialchars($padre['id']) ?></td>
+                                <td><strong><?= htmlspecialchars($padre['nombre'] . ' ' . $padre['apellido']) ?></strong></td>
+                                <td><?= htmlspecialchars($padre['correo']) ?></td>
                                 <td>
-                                    <span class="badge bg-info"><?= $padre['hijos'] ?></span>
+                                    <span class="badge bg-info"><?= $hijos_por_padre[$padre['id']] ?? 0 ?></span>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -254,45 +242,33 @@ $grupos = [
                         <i class="bi bi-person-badge me-2"></i>
                         Gestión de Docentes
                     </h2>
-                    <button class="btn btn-primary">
+                    <a href="registrar_docentes.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nuevo Docente
-                    </button>
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>ID</th>
+                                <th>Usuario</th>
                                 <th>Nombre</th>
-                                <th>Materia</th>
-                                <th>Grupo Asignado</th>
-                                <th>Estado</th>
+                                <th>Correo</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($docentes as $docente): ?>
                             <tr>
-                                <td><?= $docente['id'] ?></td>
-                                <td><strong><?= $docente['nombre'] ?></strong></td>
-                                <td><?= $docente['materia'] ?></td>
-                                <td><?= $docente['grupo'] ?></td>
+                                <td><?= htmlspecialchars($docente['id']) ?></td>
+                                <td><?= htmlspecialchars($docente['usuario']) ?></td>
+                                <td><strong><?= htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']) ?></strong></td>
+                                <td><?= htmlspecialchars($docente['correo']) ?></td>
                                 <td>
-                                    <span class="badge bg-<?= $docente['estado'] == 'Activo' ? 'success' : 'danger' ?>">
-                                        <?= $docente['estado'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -309,44 +285,36 @@ $grupos = [
                         <i class="bi bi-collection me-2"></i>
                         Gestión de Grupos
                     </h2>
-                    <button class="btn btn-primary">
+                    <a href="registrar_grupos.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nuevo Grupo
-                    </button>
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-hover">
                         <thead>
                             <tr>
-                                <th>Grado</th>
-                                <th>Grupo</th>
-                                <th>Total Alumnos</th>
+                                <th>#</th>
+                                <th>Nombre</th>
                                 <th>Docente Asignado</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($grupos as $grupo): ?>
+                            <?php if (empty($grupos)): ?>
+                                <tr><td colspan="4" class="text-center">No hay grupos registrados.</td></tr>
+                            <?php else: foreach ($grupos as $i => $grupo): ?>
                             <tr>
-                                <td><strong><?= $grupo['grado'] ?></strong></td>
-                                <td><?= $grupo['grupo'] ?></td>
+                                <td><?= $i+1 ?></td>
+                                <td><?= htmlspecialchars($grupo['nombre']) ?></td>
+                                <td><?= htmlspecialchars($grupo['docente_nombre'] . ' ' . $grupo['docente_apellido']) ?></td>
                                 <td>
-                                    <span class="badge bg-info"><?= $grupo['alumnos'] ?></span>
-                                </td>
-                                <td><?= $grupo['docente'] ?></td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                                 </td>
                             </tr>
-                            <?php endforeach; ?>
+                            <?php endforeach; endif; ?>
                         </tbody>
                     </table>
                 </div>

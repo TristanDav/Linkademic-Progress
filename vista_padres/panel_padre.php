@@ -615,3 +615,4 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
     </script>
 </body>
 </html>
+ 

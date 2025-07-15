@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contrasena = trim($_POST['contrasena'] ?? '');
 
     if ($usuario && $contrasena) {
-        // Buscar por usuario o correo, y rol secretario (rol_id=3)
+        // Buscar por usuario o correo, y rol secretario (rol_id=3), comparando contraseña en texto plano
         $stmt = $conexion->prepare("SELECT id, usuario, contrasena, nombre, apellido FROM usuarios WHERE (usuario = ? OR correo = ?) AND contrasena = ? AND rol_id = 3 LIMIT 1");
         $stmt->bind_param('sss', $usuario, $usuario, $contrasena);
         $stmt->execute();
