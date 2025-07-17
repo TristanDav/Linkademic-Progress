@@ -32,15 +32,27 @@ while ($row = $res_doc->fetch_assoc()) {
     $docentes[] = $row;
 }
 
+// Obtener materias para asignar al grupo
+$materias = [];
+$res_mat = $conexion->query("SELECT id, nombre, descripcion FROM materias ORDER BY nombre");
+while ($row = $res_mat->fetch_assoc()) {
+    $materias[] = $row;
+}
+
 // --- Guardar grupo (nuevo o editado) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombre = trim($_POST['nombre'] ?? '');
+    $nivel = trim($_POST['nivel'] ?? '');
+    $letra = trim($_POST['letra'] ?? '');
     $docente_id = intval($_POST['docente_id'] ?? 0);
     $id_edit = intval($_POST['id_edit'] ?? 0);
+    $nombre = ($nivel && $letra) ? ("$nivel-$letra") : '';
+    $materias_seleccionadas = $_POST['materias'] ?? [];
 
     // Validaciones
-    if (!$nombre) $errores[] = 'El nombre del grupo es obligatorio.';
+    if (!$nivel) $errores[] = 'El nivel es obligatorio.';
+    if (!$letra) $errores[] = 'La letra del grupo es obligatoria.';
     if ($docente_id <= 0) $errores[] = 'Selecciona un docente asignado.';
+    if (empty($materias_seleccionadas)) $errores[] = 'Selecciona al menos una materia para el grupo.';
 
     if (empty($errores)) {
         if ($id_edit > 0) {
@@ -49,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $exito = $stmt->execute();
             $stmt->close();
             if ($exito) {
+                // Actualizar materias asignadas (opcional, si se implementa edición de materias)
                 header('Location: registrar_grupos.php');
                 exit;
             } else {
@@ -57,7 +70,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $stmt = $conexion->prepare("INSERT INTO grupos (nombre, docente_id) VALUES (?, ?)");
             $stmt->bind_param('si', $nombre, $docente_id);
-            $exito = $stmt->execute();
+            if ($stmt->execute()) {
+                $grupo_id = $conexion->insert_id;
+                // Insertar materias seleccionadas en grupo_materias
+                $stmt_mat = $conexion->prepare("INSERT INTO grupo_materias (grupo_id, materia_id) VALUES (?, ?)");
+                foreach ($materias_seleccionadas as $materia_id) {
+                    $stmt_mat->bind_param('ii', $grupo_id, $materia_id);
+                    $stmt_mat->execute();
+                }
+                $stmt_mat->close();
+                $exito = true;
+            } else {
+                $errores[] = 'Error al registrar el grupo.';
+            }
             $stmt->close();
         }
     }
@@ -109,15 +134,27 @@ while ($row = $res->fetch_assoc()) {
             <?php endif; ?>
             <form method="post" class="row g-4">
                 <input type="hidden" name="id_edit" value="<?= $grupo_edit['id'] ?? '' ?>">
-                <div class="col-md-8">
-                    <label for="nombre" class="form-label">Nombre del grupo</label>
-                    <select class="form-select" id="nombre" name="nombre" required>
-                        <option value="">-- Selecciona grupo --</option>
+                <div class="col-md-4">
+                    <label for="nivel" class="form-label">Grado:</label>
+                    <select class="form-select" id="nivel" name="nivel" required>
+                        <option value="">-- Nivel (1-6) --</option>
+                        <?php
+                        $niveles = range(1, 6);
+                        $nivel_actual = $grupo_edit ? (explode('-', $grupo_edit['nombre'])[0] ?? '') : ($_POST['nivel'] ?? '');
+                        foreach ($niveles as $nivel): ?>
+                            <option value="<?= $nivel ?>" <?= ($nivel_actual == $nivel) ? 'selected' : '' ?>><?= $nivel ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="letra" class="form-label">Grupo:</label>
+                    <select class="form-select" id="letra" name="letra" required>
+                        <option value="">-- Letra (A-H) --</option>
                         <?php
                         $letras = range('A', 'H');
-                        $valor_actual = $grupo_edit['nombre'] ?? ($_POST['nombre'] ?? '');
+                        $letra_actual = $grupo_edit ? (explode('-', $grupo_edit['nombre'])[1] ?? '') : ($_POST['letra'] ?? '');
                         foreach ($letras as $letra): ?>
-                            <option value="<?= $letra ?>" <?= ($valor_actual == $letra) ? 'selected' : '' ?>><?= $letra ?></option>
+                            <option value="<?= $letra ?>" <?= ($letra_actual == $letra) ? 'selected' : '' ?>><?= $letra ?></option>
                         <?php endforeach; ?>
                     </select>
                 </div>
@@ -129,6 +166,29 @@ while ($row = $res->fetch_assoc()) {
                             <option value="<?= $d['id'] ?>" <?= ((isset($grupo_edit['docente_id']) && $grupo_edit['docente_id'] == $d['id']) || (isset($_POST['docente_id']) && $_POST['docente_id'] == $d['id'])) ? 'selected' : '' ?>><?= htmlspecialchars($d['nombre'] . ' ' . $d['apellido']) ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Materias a asignar al grupo:</label>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-dark table-bordered align-middle">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>Nombre</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            <?php foreach ($materias as $mat): ?>
+                                <tr>
+                                    <td><input type="checkbox" name="materias[]" value="<?= $mat['id'] ?>" <?= (isset($_POST['materias']) && in_array($mat['id'], $_POST['materias'])) ? 'checked' : '' ?>></td>
+                                    <td><?= htmlspecialchars($mat['nombre']) ?></td>
+                                    <td><?= htmlspecialchars($mat['descripcion']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
                 <div class="col-12 d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary px-4"><i class="bi bi-person-plus"></i> <?= $editando ? 'Actualizar' : 'Registrar' ?></button>

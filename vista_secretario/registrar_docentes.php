@@ -10,16 +10,19 @@ $docente_edit = null;
 // --- Eliminar docente ---
 if (isset($_GET['eliminar'])) {
     $id = intval($_GET['eliminar']);
+    $conexion->query("DELETE FROM docentes WHERE usuario_id = $id");
     $conexion->query("DELETE FROM usuarios WHERE id = $id AND rol_id = 2");
     header('Location: registrar_docentes.php');
     exit;
 }
 
 // --- Editar docente (mostrar datos en formulario) ---
+$editando = false;
+$docente_edit = null;
 if (isset($_GET['editar'])) {
     $editando = true;
     $id = intval($_GET['editar']);
-    $res = $conexion->query("SELECT * FROM usuarios WHERE id = $id AND rol_id = 2");
+    $res = $conexion->query("SELECT u.*, d.edad, d.anos_academico, d.direccion AS direccion_doc, d.telefono, d.especialidad, d.numero_empleado, d.nivel_educativo FROM usuarios u LEFT JOIN docentes d ON u.id = d.usuario_id WHERE u.id = $id AND u.rol_id = 2");
     if ($res && $res->num_rows > 0) {
         $docente_edit = $res->fetch_assoc();
     }
@@ -32,14 +35,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $contrasena = trim($_POST['contrasena'] ?? '');
     $nombre = trim($_POST['nombre'] ?? '');
     $apellido = trim($_POST['apellido'] ?? '');
+    $edad = trim($_POST['edad'] ?? '');
+    $anos_academico = trim($_POST['anos_academico'] ?? '');
+    $direccion_doc = trim($_POST['direccion_doc'] ?? '');
+    $telefono = trim($_POST['telefono'] ?? '');
+    $especialidad = trim($_POST['especialidad'] ?? '');
+    $numero_empleado = trim($_POST['numero_empleado'] ?? '');
+    $nivel_educativo = trim($_POST['nivel_educativo'] ?? '');
     $id_edit = intval($_POST['id_edit'] ?? 0);
 
     // Validaciones
     if (!$usuario) $errores[] = 'El usuario es obligatorio.';
     if (!$correo) $errores[] = 'El correo es obligatorio.';
-    if (!$contrasena) $errores[] = 'La contraseña es obligatoria.';
+    if (!$contrasena && !$id_edit) $errores[] = 'La contraseña es obligatoria.';
     if (!$nombre) $errores[] = 'El nombre es obligatorio.';
     if (!$apellido) $errores[] = 'El apellido es obligatorio.';
+    if (!$edad) $errores[] = 'La edad es obligatoria.';
+    if (!$telefono) $errores[] = 'El teléfono es obligatorio.';
+    if (!$direccion_doc) $errores[] = 'La dirección es obligatoria.';
+    if (!$especialidad) $errores[] = 'La especialidad es obligatoria.';
+    if (!$numero_empleado) $errores[] = 'El número de empleado es obligatorio.';
+    if (!$nivel_educativo) $errores[] = 'El nivel educativo es obligatorio.';
 
     // Validar usuario/correo únicos
     if (empty($errores)) {
@@ -61,28 +77,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errores)) {
         $rol_id = 2; // docente
         if ($id_edit > 0) {
-            $stmt = $conexion->prepare("UPDATE usuarios SET usuario=?, correo=?, contrasena=?, nombre=?, apellido=? WHERE id=? AND rol_id=2");
-            $stmt->bind_param('sssssi', $usuario, $correo, $contrasena, $nombre, $apellido, $id_edit);
-            $exito = $stmt->execute();
-            $stmt->close();
-            if ($exito) {
-                header('Location: registrar_docentes.php');
-                exit;
+            // Actualizar usuario
+            if ($contrasena) {
+                $stmt = $conexion->prepare("UPDATE usuarios SET usuario=?, correo=?, contrasena=?, nombre=?, apellido=? WHERE id=? AND rol_id=2");
+                $stmt->bind_param('sssssi', $usuario, $correo, $contrasena, $nombre, $apellido, $id_edit);
             } else {
-                $errores[] = 'Error al actualizar el docente.';
+                $stmt = $conexion->prepare("UPDATE usuarios SET usuario=?, correo=?, nombre=?, apellido=? WHERE id=? AND rol_id=2");
+                $stmt->bind_param('ssssi', $usuario, $correo, $nombre, $apellido, $id_edit);
             }
+            $stmt->execute();
+            $stmt->close();
+            // Actualizar datos en docentes
+            $stmt2 = $conexion->prepare("UPDATE docentes SET edad=?, anos_academico=?, direccion=?, telefono=?, especialidad=?, numero_empleado=?, nivel_educativo=? WHERE usuario_id=?");
+            $stmt2->bind_param('iisssssi', $edad, $anos_academico, $direccion_doc, $telefono, $especialidad, $numero_empleado, $nivel_educativo, $id_edit);
+            $stmt2->execute();
+            $stmt2->close();
+            $exito = true;
         } else {
             $stmt = $conexion->prepare("INSERT INTO usuarios (usuario, correo, contrasena, nombre, apellido, rol_id) VALUES (?, ?, ?, ?, ?, ?)");
             $stmt->bind_param('sssssi', $usuario, $correo, $contrasena, $nombre, $apellido, $rol_id);
-            $exito = $stmt->execute();
+            if ($stmt->execute()) {
+                $usuario_id = $conexion->insert_id;
+                // Insertar en tabla docentes
+                $stmt2 = $conexion->prepare("INSERT INTO docentes (usuario_id, edad, anos_academico, direccion, telefono, especialidad, numero_empleado, nivel_educativo) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt2->bind_param('iiisssss', $usuario_id, $edad, $anos_academico, $direccion_doc, $telefono, $especialidad, $numero_empleado, $nivel_educativo);
+                if ($stmt2->execute()) {
+                    $exito = true;
+                    // Limpiar variables para que el formulario quede vacío
+                    $usuario = $correo = $contrasena = $nombre = $apellido = $edad = $anos_academico = $direccion_doc = $telefono = $especialidad = $numero_empleado = $nivel_educativo = '';
+                } else {
+                    $errores[] = 'Error al registrar los datos adicionales del docente.';
+                }
+                $stmt2->close();
+            } else {
+                $errores[] = 'Error al registrar el docente.';
+            }
             $stmt->close();
         }
     }
 }
-
 // --- Listar docentes ---
 $docentes = [];
-$sql = "SELECT * FROM usuarios WHERE rol_id = 2 ORDER BY apellido, nombre";
+$sql = "SELECT u.id, u.usuario, u.nombre, u.apellido, u.correo, d.edad, d.anos_academico, d.direccion, d.telefono, d.especialidad, d.numero_empleado, d.nivel_educativo FROM usuarios u LEFT JOIN docentes d ON u.id = d.usuario_id WHERE u.rol_id = 2 ORDER BY u.apellido, u.nombre";
 $res = $conexion->query($sql);
 while ($row = $res->fetch_assoc()) {
     $docentes[] = $row;
@@ -128,11 +164,11 @@ while ($row = $res->fetch_assoc()) {
                 <input type="hidden" name="id_edit" value="<?= $docente_edit['id'] ?? '' ?>">
                 <div class="col-md-6">
                     <label for="usuario" class="form-label">Usuario</label>
-                    <input type="text" class="form-control" id="usuario" name="usuario" required value="<?= htmlspecialchars($docente_edit['usuario'] ?? ($_POST['usuario'] ?? '')) ?>">
+                    <input type="text" class="form-control" id="usuario" name="usuario" required value="<?= $docente_edit['usuario'] ?? ($usuario ?? '') ?>">
                 </div>
                 <div class="col-md-6">
                     <label for="correo" class="form-label">Correo electrónico</label>
-                    <input type="email" class="form-control" id="correo" name="correo" required value="<?= htmlspecialchars($docente_edit['correo'] ?? ($_POST['correo'] ?? '')) ?>">
+                    <input type="email" class="form-control" id="correo" name="correo" required value="<?= $docente_edit['correo'] ?? ($correo ?? '') ?>">
                 </div>
                 <div class="col-md-6">
                     <label for="contrasena" class="form-label">Contraseña</label>
@@ -140,16 +176,46 @@ while ($row = $res->fetch_assoc()) {
                 </div>
                 <div class="col-md-6">
                     <label for="nombre" class="form-label">Nombre(s)</label>
-                    <input type="text" class="form-control" id="nombre" name="nombre" required value="<?= htmlspecialchars($docente_edit['nombre'] ?? ($_POST['nombre'] ?? '')) ?>">
+                    <input type="text" class="form-control" id="nombre" name="nombre" required value="<?= $docente_edit['nombre'] ?? ($nombre ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="apellido" class="form-label">Apellido(s)</label>
+                    <input type="text" class="form-control" id="apellido" name="apellido" required value="<?= $docente_edit['apellido'] ?? ($apellido ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="edad" class="form-label">Edad</label>
+                    <input type="number" class="form-control" id="edad" name="edad" required value="<?= $docente_edit['edad'] ?? ($edad ?? '') ?>">
                 </div>
                 <div class="col-md-12">
-                    <label for="apellido" class="form-label">Apellido(s)</label>
-                    <input type="text" class="form-control" id="apellido" name="apellido" required value="<?= htmlspecialchars($docente_edit['apellido'] ?? ($_POST['apellido'] ?? '')) ?>">
+                    <label for="direccion_doc" class="form-label">Dirección</label>
+                    <input type="text" class="form-control" id="direccion_doc" name="direccion_doc" required value="<?= $docente_edit['direccion_doc'] ?? ($direccion_doc ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="telefono" class="form-label">Teléfono</label>
+                    <input type="text" class="form-control" id="telefono" name="telefono" required value="<?= $docente_edit['telefono'] ?? ($telefono ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="especialidad" class="form-label">Especialidad</label>
+                    <input type="text" class="form-control" id="especialidad" name="especialidad" required value="<?= $docente_edit['especialidad'] ?? ($especialidad ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="numero_empleado" class="form-label">Número de Empleado</label>
+                    <input type="text" class="form-control" id="numero_empleado" name="numero_empleado" required value="<?= $docente_edit['numero_empleado'] ?? ($numero_empleado ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="nivel_educativo" class="form-label">Nivel Educativo</label>
+                    <input type="text" class="form-control" id="nivel_educativo" name="nivel_educativo" required value="<?= $docente_edit['nivel_educativo'] ?? ($nivel_educativo ?? '') ?>">
+                </div>
+                <div class="col-md-6">
+                    <label for="anos_academico" class="form-label">Años de Académico</label>
+                    <input type="number" class="form-control" id="anos_academico" name="anos_academico" required value="<?= $docente_edit['anos_academico'] ?? ($anos_academico ?? '') ?>">
                 </div>
                 <div class="col-12 d-flex justify-content-end">
                     <button type="submit" class="btn btn-primary px-4"><i class="bi bi-person-plus"></i> <?= $editando ? 'Actualizar' : 'Registrar' ?></button>
                     <?php if ($editando): ?>
                         <a href="registrar_docentes.php" class="btn btn-secondary ms-2">Cancelar</a>
+                    <?php else: ?>
+                        <a href="panel_secretario.php" class="btn btn-outline-light ms-2"><i class="bi bi-arrow-left"></i> Volver al panel</a>
                     <?php endif; ?>
                 </div>
             </form>
@@ -186,7 +252,11 @@ while ($row = $res->fetch_assoc()) {
                 </table>
             </div>
         </div>
-        <a href="panel_secretario.php" class="btn btn-link mt-3"><i class="bi bi-arrow-left"></i> Volver al panel</a>
+        <?php if ($editando): ?>
+            <a href="registrar_docentes.php" class="btn btn-secondary ms-2">Cancelar</a>
+        <?php else: ?>
+            <a href="panel_secretario.php" class="btn btn-outline-light ms-2"><i class="bi bi-arrow-left"></i> Volver al panel</a>
+        <?php endif; ?>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -3,21 +3,22 @@ session_start();
 require_once '../conexion.php';
 
 // Obtener alumnos con grupo y tutor
-$sql = "
-SELECT a.id, u.usuario, u.nombre, u.apellido, u.correo, a.grado_cursa, g.nombre AS grupo_nombre,
-       tu.nombre AS tutor_nombre, tu.apellido AS tutor_apellido
-FROM alumnos a
-JOIN usuarios u ON a.usuario_id = u.id
-LEFT JOIN grupos g ON a.grupo_id = g.id
-LEFT JOIN tutores t ON a.tutor_id = t.id
-LEFT JOIN usuarios tu ON t.usuario_id = tu.id
-ORDER BY u.nombre, u.apellido
-";
+$sql = "SELECT a.id, a.nombre, a.apellido, a.fecha_nacimiento, g.nombre AS grupo, 
+               u.nombre AS padre_nombre, u.apellido AS padre_apellido
+        FROM alumnos a
+        LEFT JOIN grupos g ON a.grupo_id = g.id
+        LEFT JOIN usuarios u ON a.padre_id = u.id
+        ORDER BY a.apellido, a.nombre";
 $res = $conexion->query($sql);
 $alumnos = $res ? $res->fetch_all(MYSQLI_ASSOC) : [];
 
 // Obtener padres reales de la BD
-$sql_padres = "SELECT id, nombre, apellido, correo FROM usuarios WHERE rol_id = 1 ORDER BY nombre, apellido";
+
+$sql_padres = "SELECT u.id, u.nombre, u.apellido, u.correo, p.telefono, p.direccion, p.parentesco, p.profesion, p.correo_alternativo, p.observaciones
+FROM usuarios u
+LEFT JOIN padres p ON u.id = p.usuario_id
+WHERE u.rol_id = 1
+ORDER BY u.nombre, u.apellido";
 $res_padres = $conexion->query($sql_padres);
 $padres = $res_padres ? $res_padres->fetch_all(MYSQLI_ASSOC) : [];
 
@@ -39,6 +40,11 @@ $docentes = $res_docentes ? $res_docentes->fetch_all(MYSQLI_ASSOC) : [];
 $sql_grupos = "SELECT g.id, g.nombre, u.nombre AS docente_nombre, u.apellido AS docente_apellido FROM grupos g LEFT JOIN usuarios u ON g.docente_id = u.id ORDER BY g.nombre";
 $res_grupos = $conexion->query($sql_grupos);
 $grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
+
+// Obtener materias reales de la BD
+$sql_materias = "SELECT * FROM materias ORDER BY nombre";
+$res_materias = $conexion->query($sql_materias);
+$materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -164,24 +170,22 @@ $grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Usuario</th>
                                 <th>Nombre</th>
-                                <th>Correo</th>
-                                <th>Grado</th>
+                                <th>Apellido</th>
+                                <th>Fecha de Nacimiento</th>
                                 <th>Grupo</th>
-                                <th>Tutor</th>
+                                <th>Padre</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($alumnos as $alumno): ?>
                             <tr>
                                 <td><?= htmlspecialchars($alumno['id']) ?></td>
-                                <td><?= htmlspecialchars($alumno['usuario']) ?></td>
-                                <td><strong><?= htmlspecialchars($alumno['nombre'] . ' ' . $alumno['apellido']) ?></strong></td>
-                                <td><?= htmlspecialchars($alumno['correo']) ?></td>
-                                <td><?= htmlspecialchars($alumno['grado_cursa']) ?></td>
-                                <td><?= htmlspecialchars($alumno['grupo_nombre'] ?? 'Sin grupo') ?></td>
-                                <td><?= htmlspecialchars(($alumno['tutor_nombre'] ?? '') . ' ' . ($alumno['tutor_apellido'] ?? '')) ?: 'Sin tutor' ?></td>
+                                <td><strong><?= htmlspecialchars($alumno['nombre']) ?></strong></td>
+                                <td><?= htmlspecialchars($alumno['apellido']) ?></td>
+                                <td><?= htmlspecialchars($alumno['fecha_nacimiento']) ?></td>
+                                <td><?= htmlspecialchars($alumno['grupo']) ?></td>
+                                <td><?= htmlspecialchars(($alumno['padre_nombre'] ?? '') . ' ' . ($alumno['padre_apellido'] ?? '')) ?: 'Sin padre' ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -209,6 +213,12 @@ $grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
                                 <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Correo</th>
+                                <th>Teléfono</th>
+                                <th>Dirección</th>
+                                <th>Parentesco</th>
+                                <th>Profesión</th>
+                                <th>Correo alternativo</th>
+                                <th>Observaciones</th>
                                 <th>Hijos</th>
                                 <th>Acciones</th>
                             </tr>
@@ -219,9 +229,13 @@ $grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><?= htmlspecialchars($padre['id']) ?></td>
                                 <td><strong><?= htmlspecialchars($padre['nombre'] . ' ' . $padre['apellido']) ?></strong></td>
                                 <td><?= htmlspecialchars($padre['correo']) ?></td>
-                                <td>
-                                    <span class="badge bg-info"><?= $hijos_por_padre[$padre['id']] ?? 0 ?></span>
-                                </td>
+                                <td><?= htmlspecialchars($padre['telefono']) ?></td>
+                                <td><?= htmlspecialchars($padre['direccion']) ?></td>
+                                <td><?= htmlspecialchars($padre['parentesco']) ?></td>
+                                <td><?= htmlspecialchars($padre['profesion']) ?></td>
+                                <td><?= htmlspecialchars($padre['correo_alternativo']) ?></td>
+                                <td><?= htmlspecialchars($padre['observaciones']) ?></td>
+                                <td><span class="badge bg-info"><?= $hijos_por_padre[$padre['id']] ?? 0 ?></span></td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
                                     <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
@@ -328,61 +342,35 @@ $grupos = $res_grupos ? $res_grupos->fetch_all(MYSQLI_ASSOC) : [];
                         <i class="bi bi-book me-2"></i>
                         Gestión de Materias
                     </h2>
-                    <button class="btn btn-primary">
+                    <a href="registrar_materias.php" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-2"></i>
                         Nueva Materia
-                    </button>
+                    </a>
                 </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <h5 class="card-title text-primary">Materias Básicas</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Matemáticas
-                                    <span class="badge bg-primary rounded-pill">5 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Español
-                                    <span class="badge bg-primary rounded-pill">5 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Ciencias Naturales
-                                    <span class="badge bg-primary rounded-pill">4 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Historia
-                                    <span class="badge bg-primary rounded-pill">4 grupos</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <h5 class="card-title text-primary">Materias Especiales</h5>
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Educación Física
-                                    <span class="badge bg-success rounded-pill">6 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Artes
-                                    <span class="badge bg-success rounded-pill">6 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Inglés
-                                    <span class="badge bg-success rounded-pill">5 grupos</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Computación
-                                    <span class="badge bg-success rounded-pill">4 grupos</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                <?php if (empty($materias)): ?>
+                    <tr><td colspan="3" class="text-center">No hay materias registradas.</td></tr>
+                <?php else: foreach ($materias as $i => $m): ?>
+                    <tr>
+                        <td><?= $i+1 ?></td>
+                        <td><?= htmlspecialchars($m['nombre']) ?></td>
+                        <td><?= htmlspecialchars($m['descripcion']) ?></td>
+                    </tr>
+                <?php endforeach; endif; ?>
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
 
         <div class="section" id="reportes">
             <div class="card">
