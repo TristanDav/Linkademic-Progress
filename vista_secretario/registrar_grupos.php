@@ -79,6 +79,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt_mat->execute();
                 }
                 $stmt_mat->close();
+                // Actualizar el grupo_id en la tabla docentes para el docente asignado
+                $stmt_doc = $conexion->prepare("UPDATE docentes SET grupo_id = ? WHERE usuario_id = ?");
+                $stmt_doc->bind_param('ii', $grupo_id, $docente_id);
+                $stmt_doc->execute();
+                $stmt_doc->close();
                 $exito = true;
             } else {
                 $errores[] = 'Error al registrar el grupo.';

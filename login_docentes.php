@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $resultado = $stmt->get_result();
         if ($resultado->num_rows === 1) {
             $datos = $resultado->fetch_assoc();
-            $_SESSION['docente_id'] = $datos['id'];
+            $_SESSION['usuario_id'] = $datos['id'];
             $_SESSION['nombre_docente'] = $datos['nombre'];
             $_SESSION['apellido_docente'] = $datos['apellido'];
             header('Location: vista_docentes/panel_docente.php');
