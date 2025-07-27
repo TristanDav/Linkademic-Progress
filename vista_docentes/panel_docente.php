@@ -244,7 +244,6 @@ $avisos = [
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre</th>
-                                <th>Grado</th>
                                 <th>Grupo</th>
                                 <th>Asistencias (%)</th>
                                 <th>Promedio</th>
@@ -254,13 +253,40 @@ $avisos = [
                         <tbody>
                             <?php if (count($alumnos) > 0): ?>
                                 <?php foreach ($alumnos as $alumno): ?>
+                                <?php
+                                    // Calcular porcentaje de asistencias
+                                    $total_dias = 0;
+                                    $total_presentes = 0;
+                                    $stmtTotal = $conexion->prepare('SELECT COUNT(*) FROM asistencia WHERE alumno_id = ?');
+                                    $stmtTotal->bind_param('i', $alumno['id']);
+                                    $stmtTotal->execute();
+                                    $stmtTotal->bind_result($total_dias);
+                                    $stmtTotal->fetch();
+                                    $stmtTotal->close();
+                                    $stmtPres = $conexion->prepare('SELECT COUNT(*) FROM asistencia WHERE alumno_id = ? AND presente = 1');
+                                    $stmtPres->bind_param('i', $alumno['id']);
+                                    $stmtPres->execute();
+                                    $stmtPres->bind_result($total_presentes);
+                                    $stmtPres->fetch();
+                                    $stmtPres->close();
+                                    $porc_asistencia = ($total_dias > 0) ? round(($total_presentes / $total_dias) * 100, 1) : '-';
+                                    // Calcular promedio de calificaciones
+                                    $promedio = '-';
+                                    $stmtProm = $conexion->prepare('SELECT AVG(calificacion) FROM calificaciones WHERE alumno_id = ?');
+                                    $stmtProm->bind_param('i', $alumno['id']);
+                                    $stmtProm->execute();
+                                    $stmtProm->bind_result($prom);
+                                    if ($stmtProm->fetch() && $prom !== null) {
+                                        $promedio = round($prom, 2);
+                                    }
+                                    $stmtProm->close();
+                                ?>
                                 <tr>
                                     <td><?= $alumno['id'] ?></td>
                                     <td><strong><?= htmlspecialchars($alumno['nombre'] . ' ' . $alumno['apellido']) ?></strong></td>
-                                    <td>-</td> <!-- Puedes mostrar el grado si lo tienes en la BD -->
                                     <td><?= htmlspecialchars($grupo) ?></td>
-                                    <td>-</td> <!-- Puedes calcular el porcentaje de asistencias si lo implementas -->
-                                    <td>-</td> <!-- Puedes calcular el promedio si lo implementas -->
+                                    <td><?= $porc_asistencia !== '-' ? $porc_asistencia . '%' : '-' ?></td>
+                                    <td><?= $promedio !== '-' ? '<span class="badge bg-'.($promedio >= 9 ? 'success' : ($promedio >= 8 ? 'warning' : 'danger')).'">'.$promedio.'</span>' : '<span class="badge bg-secondary">-</span>' ?></td>
                                     <td>
                                         <button class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-eye"></i>
@@ -272,7 +298,7 @@ $avisos = [
                                 </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <tr><td colspan="7" class="text-center">No hay alumnos registrados en este grupo.</td></tr>
+                                <tr><td colspan="6" class="text-center">No hay alumnos registrados en este grupo.</td></tr>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -379,7 +405,7 @@ $avisos = [
                     <div class="col-md-4">
                         <div class="card text-center">
                             <div class="card-body">
-                                <button class="btn btn-success btn-lg">
+                                <button class="btn btn-success btn-lg" onclick="window.location.href='registrar_asistencia.php'">
                                     <i class="bi bi-check-circle me-2"></i>
                                     Tomar Asistencia
                                 </button>

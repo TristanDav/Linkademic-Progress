@@ -181,6 +181,7 @@ body {
 
 .verde { background: #198754; }
 .rojo { background: #dc3545; }
+.gris { background: #6c757d; }
 
 .stats-card {
     background: linear-gradient(135deg, #17a2b8, #6f42c1);

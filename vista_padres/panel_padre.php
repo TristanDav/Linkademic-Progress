@@ -1,49 +1,80 @@
 <?php
-$materias = [
-    ['nombre' => 'Matemáticas', 'total_tareas' => 10, 'tareas_entregadas' => 8],
-    ['nombre' => 'Español', 'total_tareas' => 12, 'tareas_entregadas' => 10],
-];
+session_start();
+require_once '../conexion.php';
 
-$examenes = [
-    ['materia' => 'Matemáticas', 'total' => 2, 'calificacion' => 85],
-    ['materia' => 'Español', 'total' => 3, 'calificacion' => 90],
-];
-
-$asistencias = [
-    '2025-02-01' => true,
-    '2025-02-02' => false,
-    '2025-02-03' => true,
-    '2025-02-05' => false,
-    '2025-02-07' => true,
-    '2025-02-10' => true,
-    '2025-02-12' => false,
-    '2025-02-15' => true,
-    '2025-02-16' => false,
-    '2025-02-20' => true,
-    '2025-02-23' => false,
-    '2025-02-28' => true,
-];
-
-function calcularEstadistica($materias, $examenes, $asistencias) {
-    $tareas_total = 0;
-    $tareas_entregadas = 0;
-    foreach ($materias as $m) {
-        $tareas_total += $m['total_tareas'];
-        $tareas_entregadas += $m['tareas_entregadas'];
-    }
-    $porcentaje_tareas = $tareas_total > 0 ? ($tareas_entregadas / $tareas_total) * 100 : 0;
-
-    $total_calif = array_sum(array_column($examenes, 'calificacion'));
-    $porcentaje_exam = count($examenes) > 0 ? ($total_calif / (count($examenes) * 100)) * 100 : 0;
-
-    $asist_total = count($asistencias);
-    $asist_ok = array_sum($asistencias);
-    $porcentaje_asist = $asist_total > 0 ? ($asist_ok / $asist_total) * 100 : 0;
-
-    return round(($porcentaje_tareas + $porcentaje_exam + $porcentaje_asist) / 3, 2);
+// Verificar si el padre está logueado
+if (!isset($_SESSION['padre_id'])) {
+    header('Location: ../login_padres.php');
+    exit();
 }
 
-$porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
+$padre_id = $_SESSION['padre_id'];
+
+// Obtener datos del padre
+$stmt_padre = $conexion->prepare("
+    SELECT u.nombre, u.apellido, u.correo, p.telefono, p.direccion, p.parentesco, p.profesion, p.correo_alternativo
+    FROM usuarios u
+    LEFT JOIN padres p ON u.id = p.usuario_id
+    WHERE u.id = ?
+");
+$stmt_padre->bind_param('i', $padre_id);
+$stmt_padre->execute();
+$stmt_padre->bind_result($nombre_padre, $apellido_padre, $correo_padre, $telefono_padre, $direccion_padre, $parentesco_padre, $profesion_padre, $correo_alt_padre);
+$stmt_padre->fetch();
+$stmt_padre->close();
+
+// Obtener hijos del padre
+$hijos = [];
+$stmt_hijos = $conexion->prepare("
+    SELECT a.id, a.nombre, a.apellido, a.fecha_nacimiento, g.nombre as grupo_nombre
+    FROM alumnos a
+    LEFT JOIN grupos g ON a.grupo_id = g.id
+    WHERE a.padre_id = ?
+    ORDER BY a.nombre, a.apellido
+");
+$stmt_hijos->bind_param('i', $padre_id);
+$stmt_hijos->execute();
+$result_hijos = $stmt_hijos->get_result();
+while ($hijo = $result_hijos->fetch_assoc()) {
+    // Calcular promedio del hijo
+    $stmt_prom = $conexion->prepare("
+        SELECT AVG(c.calificacion) as promedio
+        FROM calificaciones c
+        INNER JOIN evaluaciones e ON c.evaluacion_id = e.id
+        WHERE c.alumno_id = ?
+    ");
+    $stmt_prom->bind_param('i', $hijo['id']);
+    $stmt_prom->execute();
+    $stmt_prom->bind_result($promedio);
+    $stmt_prom->fetch();
+    $hijo['promedio'] = $promedio !== null ? round($promedio, 1) : '-';
+    $stmt_prom->close();
+    
+    // Calcular porcentaje de asistencia del hijo
+    $stmt_asist = $conexion->prepare("
+        SELECT 
+            COUNT(*) as total_dias,
+            SUM(presente) as dias_presente
+        FROM asistencia 
+        WHERE alumno_id = ?
+    ");
+    $stmt_asist->bind_param('i', $hijo['id']);
+    $stmt_asist->execute();
+    $stmt_asist->bind_result($total_dias, $dias_presente);
+    $stmt_asist->fetch();
+    $hijo['asistencia'] = $total_dias > 0 ? round(($dias_presente / $total_dias) * 100, 1) : '-';
+    $stmt_asist->close();
+    
+    $hijos[] = $hijo;
+}
+$stmt_hijos->close();
+
+// Si no hay hijos, mostrar mensaje
+if (empty($hijos)) {
+    $hijos = [];
+}
+
+
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -67,13 +98,10 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
     
     <div class="sidebar" id="sidebar">
         <a href="#" onclick="showSection('perfil')">
-            <i class="bi bi-person-circle"></i> Perfil del Estudiante
+            <i class="bi bi-person-circle"></i> Mi Perfil
         </a>
         <a href="#" onclick="showSection('materias')">
-            <i class="bi bi-book"></i> Materias y Tareas
-        </a>
-        <a href="#" onclick="showSection('examenes')">
-            <i class="bi bi-pencil-square"></i> Exámenes
+            <i class="bi bi-book"></i> Materias y Evaluaciones
         </a>
         <a href="#" onclick="showSection('asistencias')">
             <i class="bi bi-calendar-check"></i> Asistencias
@@ -96,22 +124,22 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                 </h2>
                 <div class="row">
                     <div class="col-md-3 text-center">
-                        <img src="https://via.placeholder.com/150x150/17a2b8/ffffff?text=CR" alt="Foto del Padre" class="profile-img">
-                        <h4 class="text-primary mt-3">Carlos Alberto Rodríguez</h4>
+                        <img src="https://via.placeholder.com/150x150/17a2b8/ffffff?text=<?= strtoupper(substr($nombre_padre, 0, 1) . substr($apellido_padre, 0, 1)) ?>" alt="Foto del Padre" class="profile-img">
+                        <h4 class="text-primary mt-3"><?= htmlspecialchars($nombre_padre . ' ' . $apellido_padre) ?></h4>
                     </div>
                     <div class="col-md-9">
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong><i class="bi bi-person me-2"></i>Nombre:</strong> Carlos Alberto</p>
-                                <p><strong><i class="bi bi-person me-2"></i>Apellidos:</strong> Rodríguez Martínez</p>
-                                <p><strong><i class="bi bi-envelope me-2"></i>Email:</strong> carlos.rodriguez@email.com</p>
-                                <p><strong><i class="bi bi-telephone me-2"></i>Teléfono:</strong> (555) 123-4567</p>
+                                <p><strong><i class="bi bi-person me-2"></i>Nombre:</strong> <?= htmlspecialchars($nombre_padre) ?></p>
+                                <p><strong><i class="bi bi-person me-2"></i>Apellidos:</strong> <?= htmlspecialchars($apellido_padre) ?></p>
+                                <p><strong><i class="bi bi-envelope me-2"></i>Email:</strong> <?= htmlspecialchars($correo_padre) ?></p>
+                                <p><strong><i class="bi bi-telephone me-2"></i>Teléfono:</strong> <?= htmlspecialchars($telefono_padre ?: 'No registrado') ?></p>
                             </div>
                             <div class="col-md-6">
-                                <p><strong><i class="bi bi-geo-alt me-2"></i>Dirección:</strong> Av. Principal #123, Col. Centro</p>
-                                <p><strong><i class="bi bi-building me-2"></i>Ciudad:</strong> Ciudad de México</p>
-                                <p><strong><i class="bi bi-geo me-2"></i>Estado:</strong> CDMX</p>
-                                <p><strong><i class="bi bi-mailbox me-2"></i>Código Postal:</strong> 06000</p>
+                                <p><strong><i class="bi bi-geo-alt me-2"></i>Dirección:</strong> <?= htmlspecialchars($direccion_padre ?: 'No registrada') ?></p>
+                                <p><strong><i class="bi bi-person-heart me-2"></i>Parentesco:</strong> <?= htmlspecialchars($parentesco_padre ?: 'No especificado') ?></p>
+                                <p><strong><i class="bi bi-briefcase me-2"></i>Profesión:</strong> <?= htmlspecialchars($profesion_padre ?: 'No especificada') ?></p>
+                                <p><strong><i class="bi bi-envelope-at me-2"></i>Email Alternativo:</strong> <?= htmlspecialchars($correo_alt_padre ?: 'No registrado') ?></p>
                             </div>
                         </div>
                     </div>
@@ -124,50 +152,37 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                     <i class="bi bi-people me-2"></i>
                     Mis Hijos Inscritos
                 </h2>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-primary">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 text-center">
-                                        <img src="https://via.placeholder.com/100x100/17a2b8/ffffff?text=AR" alt="Ana Rodríguez" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
-                                    </div>
-                                    <div class="col-md-8">
-                                        <h5 class="card-title">Ana Sofía Rodríguez</h5>
-                                        <p class="card-text">
-                                            <strong><i class="bi bi-mortarboard me-2"></i>Grado:</strong> 3° Primaria<br>
-                                            <strong><i class="bi bi-people me-2"></i>Grupo:</strong> A<br>
-                                            <strong><i class="bi bi-star me-2"></i>Promedio:</strong> 9.2<br>
-                                            <strong><i class="bi bi-calendar-check me-2"></i>Asistencia:</strong> 95%
-                                        </p>
-                                        <button class="btn btn-primary btn-sm" onclick="showSection('hijo1')">Ver Detalles</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <div class="card border-primary">
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-4 text-center">
-                                        <img src="https://via.placeholder.com/100x100/17a2b8/ffffff?text=LR" alt="Luis Rodríguez" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
-                                    </div>
-                                    <div class="col-md-8">
-                                        <h5 class="card-title">Luis Miguel Rodríguez</h5>
-                                        <p class="card-text">
-                                            <strong><i class="bi bi-mortarboard me-2"></i>Grado:</strong> 1° Primaria<br>
-                                            <strong><i class="bi bi-people me-2"></i>Grupo:</strong> B<br>
-                                            <strong><i class="bi bi-star me-2"></i>Promedio:</strong> 8.8<br>
-                                            <strong><i class="bi bi-calendar-check me-2"></i>Asistencia:</strong> 92%
-                                        </p>
-                                        <button class="btn btn-primary btn-sm" onclick="showSection('hijo2')">Ver Detalles</button>
+                <?php if (!empty($hijos)): ?>
+                    <div class="row">
+                        <?php foreach ($hijos as $index => $hijo): ?>
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-primary">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4 text-center">
+                                                <img src="https://via.placeholder.com/100x100/17a2b8/ffffff?text=<?= strtoupper(substr($hijo['nombre'], 0, 1) . substr($hijo['apellido'], 0, 1)) ?>" alt="<?= htmlspecialchars($hijo['nombre']) ?>" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                            </div>
+                                            <div class="col-md-8">
+                                                <h5 class="card-title"><?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?></h5>
+                                                <p class="card-text">
+                                                    <strong><i class="bi bi-people me-2"></i>Grupo:</strong> <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'No asignado') ?><br>
+                                                    <strong><i class="bi bi-star me-2"></i>Promedio:</strong> <?= $hijo['promedio'] !== '-' ? $hijo['promedio'] : 'Sin calificaciones' ?><br>
+                                                    <strong><i class="bi bi-calendar-check me-2"></i>Asistencia:</strong> <?= $hijo['asistencia'] !== '-' ? $hijo['asistencia'] . '%' : 'Sin registro' ?>
+                                                </p>
+                                                <button class="btn btn-primary btn-sm" onclick="showSection('hijo<?= $index + 1 ?>')">Ver Detalles</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
-                </div>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>No tienes hijos registrados en el sistema.</strong> Contacta al administrador para registrar a tus hijos.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -175,71 +190,152 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
             <div class="card">
                 <h2 class="mb-4 text-primary">
                     <i class="bi bi-book me-2"></i>
-                    Materias y Tareas
+                    Materias y Evaluaciones por Hijo
                 </h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Materia</th>
-                                <th>Total Tareas</th>
-                                <th>Tareas Entregadas</th>
-                                <th>Porcentaje</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($materias as $m): ?>
-                            <tr>
-                                <td><strong><?= $m['nombre'] ?></strong></td>
-                                <td><?= $m['total_tareas'] ?></td>
-                                <td><?= $m['tareas_entregadas'] ?></td>
-                                <td>
-                                    <span class="badge bg-<?= ($m['tareas_entregadas']/$m['total_tareas']*100) >= 80 ? 'success' : (($m['tareas_entregadas']/$m['total_tareas']*100) >= 60 ? 'warning' : 'danger') ?>">
-                                        <?= round(($m['tareas_entregadas']/$m['total_tareas']*100), 1) ?>%
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
+                
+                <?php if (!empty($hijos)): ?>
+                    <?php foreach ($hijos as $index => $hijo): ?>
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    <?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?> - <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo asignado') ?>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <?php
+                                // Obtener materias del grupo del hijo con evaluaciones
+                                $materias_hijo = [];
+                                if ($hijo['grupo_nombre']) {
+                                    $stmt_materias = $conexion->prepare("
+                                        SELECT m.id, m.nombre, m.descripcion
+                                        FROM materias m
+                                        INNER JOIN grupo_materias gm ON m.id = gm.materia_id
+                                        INNER JOIN grupos g ON gm.grupo_id = g.id
+                                        WHERE g.nombre = ?
+                                        ORDER BY m.nombre
+                                    ");
+                                    $stmt_materias->bind_param('s', $hijo['grupo_nombre']);
+                                    $stmt_materias->execute();
+                                    $result_materias = $stmt_materias->get_result();
+                                    
+                                    while ($materia = $result_materias->fetch_assoc()) {
+                                        // Obtener total de evaluaciones para esta materia y grupo
+                                        $stmt_eval_total = $conexion->prepare("
+                                            SELECT COUNT(*) as total_evaluaciones
+                                            FROM evaluaciones e
+                                            INNER JOIN grupos g ON e.grupo_id = g.id
+                                            WHERE e.materia_id = ? AND g.nombre = ?
+                                        ");
+                                        $stmt_eval_total->bind_param('is', $materia['id'], $hijo['grupo_nombre']);
+                                        $stmt_eval_total->execute();
+                                        $stmt_eval_total->bind_result($total_evaluaciones);
+                                        $stmt_eval_total->fetch();
+                                        $stmt_eval_total->close();
+                                        
+                                        // Obtener evaluaciones completadas por el alumno
+                                        $stmt_eval_completadas = $conexion->prepare("
+                                            SELECT COUNT(DISTINCT e.id) as evaluaciones_completadas
+                                            FROM evaluaciones e
+                                            INNER JOIN grupos g ON e.grupo_id = g.id
+                                            INNER JOIN calificaciones c ON e.id = c.evaluacion_id
+                                            WHERE e.materia_id = ? AND g.nombre = ? AND c.alumno_id = ?
+                                        ");
+                                        $stmt_eval_completadas->bind_param('isi', $materia['id'], $hijo['grupo_nombre'], $hijo['id']);
+                                        $stmt_eval_completadas->execute();
+                                        $stmt_eval_completadas->bind_result($evaluaciones_completadas);
+                                        $stmt_eval_completadas->fetch();
+                                        $stmt_eval_completadas->close();
+                                        
+                                        // Calcular porcentaje
+                                        $porcentaje = $total_evaluaciones > 0 ? round(($evaluaciones_completadas / $total_evaluaciones) * 100, 1) : 0;
+                                        
+                                        $materia['total_evaluaciones'] = $total_evaluaciones;
+                                        $materia['evaluaciones_completadas'] = $evaluaciones_completadas;
+                                        $materia['porcentaje'] = $porcentaje;
+                                        
+                                        $materias_hijo[] = $materia;
+                                    }
+                                    $stmt_materias->close();
+                                }
+                                ?>
+                                
+                                <?php if (!empty($materias_hijo)): ?>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Materia</th>
+                                                    <th>Descripción</th>
+                                                    <th>Total Evaluaciones</th>
+                                                    <th>Evaluaciones Completadas</th>
+                                                    <th>Porcentaje</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($materias_hijo as $materia): ?>
+                                                <tr>
+                                                    <td><strong><?= htmlspecialchars($materia['nombre']) ?></strong></td>
+                                                    <td><?= htmlspecialchars($materia['descripcion'] ?: 'Sin descripción') ?></td>
+                                                    <td><?= $materia['total_evaluaciones'] ?></td>
+                                                    <td><?= $materia['evaluaciones_completadas'] ?></td>
+                                                    <td>
+                                                        <span class="badge bg-<?= $materia['porcentaje'] >= 80 ? 'success' : ($materia['porcentaje'] >= 60 ? 'warning' : 'danger') ?>">
+                                                            <?= $materia['porcentaje'] ?>%
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <!-- Resumen del hijo -->
+                                    <div class="row mt-3">
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title">Total de Evaluaciones</h6>
+                                                    <h4 class="text-primary"><?= array_sum(array_column($materias_hijo, 'total_evaluaciones')) ?></h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title">Evaluaciones Completadas</h6>
+                                                    <h4 class="text-success"><?= array_sum(array_column($materias_hijo, 'evaluaciones_completadas')) ?></h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card bg-light">
+                                                <div class="card-body text-center">
+                                                    <h6 class="card-title">Promedio de Cumplimiento</h6>
+                                                    <h4 class="text-info"><?= round(array_sum(array_column($materias_hijo, 'porcentaje')) / count($materias_hijo), 1) ?>%</h4>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php else: ?>
+                                    <div class="alert alert-info">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        <strong>No hay materias asignadas al grupo de <?= htmlspecialchars($hijo['nombre']) ?>.</strong>
+                                    </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>No tienes hijos registrados en el sistema.</strong> Contacta al administrador para registrar a tus hijos.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <div class="section" id="examenes">
-            <div class="card">
-                <h2 class="mb-4 text-primary">
-                    <i class="bi bi-pencil-square me-2"></i>
-                    Exámenes
-                </h2>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Materia</th>
-                                <th>Exámenes Aplicados</th>
-                                <th>Calificación Promedio</th>
-                                <th>Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($examenes as $ex): ?>
-                            <tr>
-                                <td><strong><?= $ex['materia'] ?></strong></td>
-                                <td><?= $ex['total'] ?></td>
-                                <td><?= $ex['calificacion'] ?>/100</td>
-                                <td>
-                                    <span class="badge bg-<?= $ex['calificacion'] >= 80 ? 'success' : ($ex['calificacion'] >= 60 ? 'warning' : 'danger') ?>">
-                                        <?= $ex['calificacion'] >= 80 ? 'Excelente' : ($ex['calificacion'] >= 60 ? 'Bueno' : 'Necesita mejorar') ?>
-                                    </span>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+
 
         <div class="section" id="asistencias">
             <div class="card">
@@ -247,59 +343,215 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                     <i class="bi bi-calendar-check me-2"></i>
                     Asistencias
                 </h2>
-                <div class="calendar-nav">
-                    <button onclick="cambiarMes(-1)">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <span id="mesActual"></span>
-                    <button onclick="cambiarMes(1)">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="leyenda">
-                    <span><div class="cuadro verde"></div> Asistió</span>
-                    <span><div class="cuadro rojo"></div> Faltó</span>
-                </div>
-                <div id="calendario" class="card"></div>
+                
+                <?php if (!empty($hijos)): ?>
+                    <!-- Selector de hijo -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="selectorHijo" class="form-label"><strong>Seleccionar Hijo:</strong></label>
+                            <select class="form-select" id="selectorHijo" onchange="cambiarHijo()">
+                                <?php foreach ($hijos as $index => $hijo): ?>
+                                    <option value="<?= $hijo['id'] ?>" <?= $index === 0 ? 'selected' : '' ?>>
+                                        <?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?> - <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo') ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Hijo seleccionado:</strong> <span id="hijoSeleccionado"><?= !empty($hijos) ? htmlspecialchars($hijos[0]['nombre'] . ' ' . $hijos[0]['apellido']) : 'Ninguno' ?></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Controles del calendario -->
+                    <div class="calendar-nav">
+                        <button onclick="cambiarMes(-1)">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <span id="mesActual"></span>
+                        <button onclick="cambiarMes(1)">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Leyenda -->
+                    <div class="leyenda">
+                        <span><div class="cuadro verde"></div> Asistió</span>
+                        <span><div class="cuadro rojo"></div> Faltó</span>
+                        <span><div class="cuadro gris"></div> Sin registro</span>
+                    </div>
+                    
+                    <!-- Calendario -->
+                    <div id="calendario" class="card"></div>
+                    
+                    <!-- Estadísticas de asistencia -->
+                    <div class="row mt-4">
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Días Asistidos</h6>
+                                    <h4 id="diasAsistidos">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-danger text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Faltas</h6>
+                                    <h4 id="faltas">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Porcentaje</h6>
+                                    <h4 id="porcentajeAsistencia">0%</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body text-center">
+                                    <h6 class="card-title">Total Días</h6>
+                                    <h4 id="totalDias">0</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>No tienes hijos registrados en el sistema.</strong> Contacta al administrador para registrar a tus hijos.
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
 
         <div class="section" id="estadisticas">
-            <div class="row">
-                <div class="col-md-4 mb-4">
-                    <div class="card stats-card">
-                        <h3><?= $porcentaje_final ?>%</h3>
-                        <p>Desempeño General</p>
+            <div class="card">
+                <h2 class="mb-4 text-primary">
+                    <i class="bi bi-graph-up me-2"></i>
+                    Estadísticas Académicas por Hijo
+                </h2>
+                
+                <?php if (!empty($hijos)): ?>
+                    <?php foreach ($hijos as $index => $hijo): ?>
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    <?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?> - <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo asignado') ?>
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title">Promedio Evaluaciones</h6>
+                                                <h4 class="text-primary"><?= $hijo['promedio'] !== '-' ? $hijo['promedio'] : 'N/A' ?></h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title">Asistencia</h6>
+                                                <h4 class="text-success"><?= $hijo['asistencia'] !== '-' ? $hijo['asistencia'] . '%' : 'N/A' ?></h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <h6 class="card-title">Desempeño General</h6>
+                                                <h4 class="text-info">
+                                                    <?php
+                                                    if ($hijo['promedio'] !== '-' && $hijo['asistencia'] !== '-') {
+                                                        $promedio_num = floatval($hijo['promedio']);
+                                                        $asistencia_num = floatval($hijo['asistencia']);
+                                                        $desempeno_general = round(($promedio_num + $asistencia_num) / 2, 1);
+                                                        echo $desempeno_general . '%';
+                                                    } else {
+                                                        echo 'N/A';
+                                                    }
+                                                    ?>
+                                                </h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <canvas id="grafica<?= $hijo['id'] ?>"></canvas>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Detalles</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <p><strong>Evaluaciones:</strong> <?= $hijo['promedio'] !== '-' ? 'Completadas' : 'Sin datos' ?></p>
+                                                <p><strong>Asistencias:</strong> <?= $hijo['asistencia'] !== '-' ? 'Registradas' : 'Sin datos' ?></p>
+                                                <p><strong>Estado:</strong> 
+                                                    <?php
+                                                    if ($hijo['promedio'] !== '-' && $hijo['asistencia'] !== '-') {
+                                                        $promedio_num = floatval($hijo['promedio']);
+                                                        $asistencia_num = floatval($hijo['asistencia']);
+                                                        $desempeno = ($promedio_num + $asistencia_num) / 2;
+                                                        if ($desempeno >= 9) {
+                                                            echo '<span class="badge bg-success">Excelente</span>';
+                                                        } elseif ($desempeno >= 8) {
+                                                            echo '<span class="badge bg-warning">Bueno</span>';
+                                                        } else {
+                                                            echo '<span class="badge bg-danger">Necesita mejorar</span>';
+                                                        }
+                                                    } else {
+                                                        echo '<span class="badge bg-secondary">Sin datos</span>';
+                                                    }
+                                                    ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>No tienes hijos registrados en el sistema.</strong> Contacta al administrador para registrar a tus hijos.
                     </div>
-                </div>
-                <div class="col-md-8">
-                    <div class="card">
-                        <h2 class="mb-4 text-primary">
-                            <i class="bi bi-graph-up me-2"></i>
-                            Estadísticas Académicas
-                        </h2>
-                        <canvas id="grafica"></canvas>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
         </div>
 
-        <!-- Sección Hijo 1 - Ana Sofía -->
-        <div class="section" id="hijo1">
+        <?php foreach ($hijos as $index => $hijo): ?>
+        <!-- Sección Hijo <?= $index + 1 ?> - <?= htmlspecialchars($hijo['nombre']) ?> -->
+        <div class="section" id="hijo<?= $index + 1 ?>">
             <div class="card mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 class="text-primary mb-0">
                         <i class="bi bi-person-circle me-2"></i>
-                        Ana Sofía Rodríguez - 3° Primaria Grupo A
+                        <?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?> - <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo asignado') ?>
                     </h2>
                     <button class="btn btn-outline-primary" onclick="showSection('perfil')">
                         <i class="bi bi-arrow-left me-2"></i>Volver al Perfil
                     </button>
                 </div>
                 <div class="text-center mb-4">
-                    <img src="https://via.placeholder.com/120x120/17a2b8/ffffff?text=AR" alt="Ana Rodríguez" class="profile-img">
-                    <h4 class="text-primary">Ana Sofía Rodríguez</h4>
-                    <p class="text-muted">3° Primaria - Grupo A | Promedio: 9.2 | Asistencia: 95%</p>
+                    <img src="https://via.placeholder.com/120x120/17a2b8/ffffff?text=<?= strtoupper(substr($hijo['nombre'], 0, 1) . substr($hijo['apellido'], 0, 1)) ?>" alt="<?= htmlspecialchars($hijo['nombre']) ?>" class="profile-img">
+                    <h4 class="text-primary"><?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?></h4>
+                    <p class="text-muted">
+                        <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo asignado') ?> | 
+                        Promedio: <?= $hijo['promedio'] !== '-' ? $hijo['promedio'] : 'Sin calificaciones' ?> | 
+                        Asistencia: <?= $hijo['asistencia'] !== '-' ? $hijo['asistencia'] . '%' : 'Sin registro' ?>
+                    </p>
                 </div>
                 
                 <!-- Información Académica -->
@@ -310,26 +562,40 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                                 <h5 class="mb-0"><i class="bi bi-book me-2"></i>Materias y Calificaciones</h5>
                             </div>
                             <div class="card-body">
+                                <?php
+                                // Obtener calificaciones por materia del hijo
+                                $stmt_calif = $conexion->prepare("
+                                    SELECT m.nombre as materia, AVG(c.calificacion) as promedio
+                                    FROM calificaciones c
+                                    INNER JOIN evaluaciones e ON c.evaluacion_id = e.id
+                                    INNER JOIN materias m ON e.materia_id = m.id
+                                    WHERE c.alumno_id = ?
+                                    GROUP BY m.id, m.nombre
+                                    ORDER BY m.nombre
+                                ");
+                                $stmt_calif->bind_param('i', $hijo['id']);
+                                $stmt_calif->execute();
+                                $result_calif = $stmt_calif->get_result();
+                                
+                                if ($result_calif->num_rows > 0):
+                                    while ($calif = $result_calif->fetch_assoc()):
+                                        $promedio_materia = round($calif['promedio'], 1);
+                                        $badge_class = $promedio_materia >= 9 ? 'success' : ($promedio_materia >= 8 ? 'warning' : 'danger');
+                                ?>
                                 <div class="d-flex justify-content-between mb-2">
-                                    <span>Matemáticas</span>
-                                    <span class="badge bg-success">9.5</span>
+                                    <span><?= htmlspecialchars($calif['materia']) ?></span>
+                                    <span class="badge bg-<?= $badge_class ?>"><?= $promedio_materia ?></span>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Español</span>
-                                    <span class="badge bg-success">9.0</span>
+                                <?php 
+                                    endwhile;
+                                else:
+                                ?>
+                                <div class="text-center text-muted">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No hay calificaciones registradas para este alumno.
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Ciencias</span>
-                                    <span class="badge bg-success">9.8</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Historia</span>
-                                    <span class="badge bg-success">8.8</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Educación Física</span>
-                                    <span class="badge bg-success">9.0</span>
-                                </div>
+                                <?php endif; ?>
+                                <?php $stmt_calif->close(); ?>
                             </div>
                         </div>
                     </div>
@@ -339,21 +605,40 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                                 <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Asistencia del Mes</h5>
                             </div>
                             <div class="card-body">
+                                <?php
+                                // Obtener estadísticas de asistencia del mes actual
+                                $mes_actual = date('Y-m');
+                                $stmt_asist_mes = $conexion->prepare("
+                                    SELECT 
+                                        COUNT(*) as total_dias,
+                                        SUM(presente) as dias_presente
+                                    FROM asistencia 
+                                    WHERE alumno_id = ? AND DATE_FORMAT(fecha, '%Y-%m') = ?
+                                ");
+                                $stmt_asist_mes->bind_param('is', $hijo['id'], $mes_actual);
+                                $stmt_asist_mes->execute();
+                                $stmt_asist_mes->bind_result($total_dias_mes, $dias_presente_mes);
+                                $stmt_asist_mes->fetch();
+                                $stmt_asist_mes->close();
+                                
+                                $faltas_mes = $total_dias_mes - $dias_presente_mes;
+                                $porcentaje_mes = $total_dias_mes > 0 ? round(($dias_presente_mes / $total_dias_mes) * 100, 1) : 0;
+                                ?>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Días Asistidos</span>
-                                    <span class="badge bg-success">19/20</span>
+                                    <span class="badge bg-success"><?= $dias_presente_mes ?>/<?= $total_dias_mes ?></span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Faltas</span>
-                                    <span class="badge bg-danger">1</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Justificadas</span>
-                                    <span class="badge bg-warning">1</span>
+                                    <span class="badge bg-danger"><?= $faltas_mes ?></span>
                                 </div>
                                 <div class="d-flex justify-content-between mb-2">
                                     <span>Porcentaje</span>
-                                    <span class="badge bg-info">95%</span>
+                                    <span class="badge bg-info"><?= $porcentaje_mes ?>%</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Mes</span>
+                                    <span class="badge bg-secondary"><?= date('F Y') ?></span>
                                 </div>
                             </div>
                         </div>
@@ -366,155 +651,15 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                         <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Tareas Pendientes</h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Materia</th>
-                                        <th>Tarea</th>
-                                        <th>Fecha de Entrega</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Matemáticas</strong></td>
-                                        <td>Problemas de fracciones</td>
-                                        <td>15/12/2024</td>
-                                        <td><span class="badge bg-warning">Pendiente</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Ciencias</strong></td>
-                                        <td>Experimento del agua</td>
-                                        <td>18/12/2024</td>
-                                        <td><span class="badge bg-warning">Pendiente</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Funcionalidad en desarrollo.</strong> Esta sección mostrará las tareas pendientes de <?= htmlspecialchars($hijo['nombre']) ?> cuando esté implementada.
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- Sección Hijo 2 - Luis Miguel -->
-        <div class="section" id="hijo2">
-            <div class="card mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h2 class="text-primary mb-0">
-                        <i class="bi bi-person-circle me-2"></i>
-                        Luis Miguel Rodríguez - 1° Primaria Grupo B
-                    </h2>
-                    <button class="btn btn-outline-primary" onclick="showSection('perfil')">
-                        <i class="bi bi-arrow-left me-2"></i>Volver al Perfil
-                    </button>
-                </div>
-                <div class="text-center mb-4">
-                    <img src="https://via.placeholder.com/120x120/17a2b8/ffffff?text=LR" alt="Luis Rodríguez" class="profile-img">
-                    <h4 class="text-primary">Luis Miguel Rodríguez</h4>
-                    <p class="text-muted">1° Primaria - Grupo B | Promedio: 8.8 | Asistencia: 92%</p>
-                </div>
-                
-                <!-- Información Académica -->
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card border-primary">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><i class="bi bi-book me-2"></i>Materias y Calificaciones</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Matemáticas</span>
-                                    <span class="badge bg-success">8.5</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Español</span>
-                                    <span class="badge bg-success">9.0</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Ciencias</span>
-                                    <span class="badge bg-success">8.8</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Historia</span>
-                                    <span class="badge bg-warning">7.5</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Educación Física</span>
-                                    <span class="badge bg-success">9.2</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card border-primary">
-                            <div class="card-header bg-primary text-white">
-                                <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Asistencia del Mes</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Días Asistidos</span>
-                                    <span class="badge bg-success">18/20</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Faltas</span>
-                                    <span class="badge bg-danger">2</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Justificadas</span>
-                                    <span class="badge bg-warning">1</span>
-                                </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Porcentaje</span>
-                                    <span class="badge bg-info">92%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tareas Pendientes -->
-                <div class="card mt-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Tareas Pendientes</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Materia</th>
-                                        <th>Tarea</th>
-                                        <th>Fecha de Entrega</th>
-                                        <th>Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>Español</strong></td>
-                                        <td>Dictado de vocales</td>
-                                        <td>16/12/2024</td>
-                                        <td><span class="badge bg-warning">Pendiente</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Matemáticas</strong></td>
-                                        <td>Sumas hasta 10</td>
-                                        <td>17/12/2024</td>
-                                        <td><span class="badge bg-warning">Pendiente</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>Ciencias</strong></td>
-                                        <td>Dibujo de animales</td>
-                                        <td>19/12/2024</td>
-                                        <td><span class="badge bg-warning">Pendiente</span></td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <?php endforeach; ?>
     </div>
 
     <!-- Bootstrap 5 JS -->
@@ -522,16 +667,62 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
     <script>
         let currentMonth = new Date().getMonth();
         let currentYear = new Date().getFullYear();
+        let currentAlumnoId = <?= !empty($hijos) ? $hijos[0]['id'] : 'null' ?>;
+        let asistenciasData = { asistencias: [], faltas: [] };
 
-        const asistencias = <?= json_encode(array_keys(array_filter($asistencias))) ?>;
-        const faltas = <?= json_encode(array_keys(array_filter($asistencias, fn($a) => !$a))) ?>;
         const calendario = document.getElementById('calendario');
         const mesActual = document.getElementById('mesActual');
+
+        // Función para cargar asistencias del alumno seleccionado
+        async function cargarAsistencias(alumnoId) {
+            try {
+                const response = await fetch(`obtener_asistencias.php?alumno_id=${alumnoId}`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error('Error:', data.error);
+                    return;
+                }
+                
+                asistenciasData = data;
+                actualizarEstadisticas(data);
+                generarCalendario(currentMonth, currentYear);
+            } catch (error) {
+                console.error('Error al cargar asistencias:', error);
+            }
+        }
+
+        // Función para cambiar de hijo
+        function cambiarHijo() {
+            const selector = document.getElementById('selectorHijo');
+            const hijoSeleccionado = document.getElementById('hijoSeleccionado');
+            
+            if (selector && hijoSeleccionado) {
+                const option = selector.options[selector.selectedIndex];
+                
+                currentAlumnoId = parseInt(selector.value);
+                hijoSeleccionado.textContent = option.text;
+                
+                cargarAsistencias(currentAlumnoId);
+            }
+        }
+
+        // Función para actualizar estadísticas
+        function actualizarEstadisticas(data) {
+            const diasAsistidos = document.getElementById('diasAsistidos');
+            const faltas = document.getElementById('faltas');
+            const porcentajeAsistencia = document.getElementById('porcentajeAsistencia');
+            const totalDias = document.getElementById('totalDias');
+            
+            if (diasAsistidos) diasAsistidos.textContent = data.dias_asistidos;
+            if (faltas) faltas.textContent = data.faltas_count;
+            if (porcentajeAsistencia) porcentajeAsistencia.textContent = data.porcentaje + '%';
+            if (totalDias) totalDias.textContent = data.total_dias;
+        }
 
         function generarCalendario(mes, año) {
             const diasMes = new Date(año, mes + 1, 0).getDate();
             const primerDia = new Date(año, mes, 1).getDay();
-            const fechaHoy = new Date();
 
             let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 8px;">`;
             const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
@@ -543,9 +734,9 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
                 const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
                 let estilo = 'background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6;';
                 
-                if (asistencias.includes(fechaStr)) {
+                if (asistenciasData.asistencias.includes(fechaStr)) {
                     estilo = 'background: #198754; color: white; border: 1px solid #198754;';
-                } else if (faltas.includes(fechaStr)) {
+                } else if (asistenciasData.faltas.includes(fechaStr)) {
                     estilo = 'background: #dc3545; color: white; border: 1px solid #dc3545;';
                 }
                 
@@ -565,53 +756,82 @@ $porcentaje_final = calcularEstadistica($materias, $examenes, $asistencias);
         }
 
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('active');
-            document.getElementById('mainContent').classList.toggle('shift');
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            
+            if (sidebar && mainContent) {
+                sidebar.classList.toggle('active');
+                mainContent.classList.toggle('shift');
+            }
         }
 
         function showSection(id) {
-            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
+            const sections = document.querySelectorAll('.section');
+            const targetSection = document.getElementById(id);
+            
+            if (sections && targetSection) {
+                sections.forEach(sec => sec.classList.remove('active'));
+                targetSection.classList.add('active');
+            }
         }
 
-        generarCalendario(currentMonth, currentYear);
+        // Cargar asistencias del primer hijo al cargar la página
+        if (currentAlumnoId) {
+            cargarAsistencias(currentAlumnoId);
+        }
+        
+        // Inicializar calendario
+        if (calendario) {
+            generarCalendario(currentMonth, currentYear);
+        }
 
-        new Chart(document.getElementById('grafica'), {
-            type: 'bar',
-            data: {
-                labels: ['Tareas', 'Exámenes', 'Asistencias'],
-                datasets: [{
-                    label: 'Desempeño (%)',
-                    data: [
-                        <?= round(($materias[0]['tareas_entregadas'] + $materias[1]['tareas_entregadas']) / ($materias[0]['total_tareas'] + $materias[1]['total_tareas']) * 100, 2) ?>,
-                        <?= round(array_sum(array_column($examenes, 'calificacion')) / (count($examenes) * 100) * 100, 2) ?>,
-                        <?= round(array_sum($asistencias) / count($asistencias) * 100, 2) ?>
-                    ],
-                    backgroundColor: ['#0d6efd', '#198754', '#ffc107'],
-                    borderColor: ['#0b5ed7', '#146c43', '#e0a800'],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: { 
-                        beginAtZero: true, 
-                        max: 100,
-                        ticks: {
-                            callback: function(value) {
-                                return value + '%';
+        // Crear gráficas individuales para cada hijo
+        <?php if (!empty($hijos)): ?>
+            <?php foreach ($hijos as $hijo): ?>
+                const ctx<?= $hijo['id'] ?> = document.getElementById('grafica<?= $hijo['id'] ?>');
+                if (ctx<?= $hijo['id'] ?>) {
+                    new Chart(ctx<?= $hijo['id'] ?>, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Evaluaciones', 'Asistencias'],
+                            datasets: [{
+                                label: 'Desempeño (%)',
+                                data: [
+                                    <?= $hijo['promedio'] !== '-' ? round($hijo['promedio'] * 10, 1) : 0 ?>, 
+                                    <?= $hijo['asistencia'] !== '-' ? round($hijo['asistencia'], 1) : 0 ?>
+                                ],
+                                backgroundColor: ['#0d6efd', '#198754'],
+                                borderColor: ['#0b5ed7', '#146c43'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                y: { 
+                                    beginAtZero: true, 
+                                    max: 100,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return value + '%';
+                                        }
+                                    }
+                                }
+                            },
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                title: {
+                                    display: true,
+                                    text: '<?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?>'
+                                }
                             }
                         }
-                    }
-                },
-                plugins: {
-                    legend: {
-                        display: false
-                    }
+                    });
                 }
-            }
-        });
+            <?php endforeach; ?>
+        <?php endif; ?>
     </script>
 </body>
 </html>
