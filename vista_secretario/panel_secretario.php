@@ -84,6 +84,9 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
         <a href="#" onclick="showSection('materias')">
             <i class="bi bi-book"></i> Materias
         </a>
+        <a href="#" onclick="showSection('notificaciones')">
+            <i class="bi bi-bell"></i> Notificaciones
+        </a>
         <a href="#" onclick="showSection('reportes')">
             <i class="bi bi-graph-up"></i> Reportes
         </a>
@@ -371,6 +374,56 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
         </div>
     </div>
 </div>
+
+        <div class="section" id="notificaciones">
+            <div class="card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="text-primary mb-0">
+                        <i class="bi bi-bell me-2"></i>
+                        Sistema de Notificaciones
+                    </h2>
+                    <a href="enviar_notificacion.php" class="btn btn-primary">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        Nueva Notificación
+                    </a>
+                </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Información del Sistema
+                                </h5>
+                                <p class="card-text">
+                                    Desde aquí puedes enviar notificaciones a los padres de familia. 
+                                    Puedes enviar mensajes individuales o masivos según tus necesidades.
+                                </p>
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Enviar a padres específicos</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Enviar a todos los padres</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Notificaciones en tiempo real</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Seguimiento de lectura</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="bi bi-bell-fill text-primary" style="font-size: 3rem;"></i>
+                                <h5 class="mt-3">Notificaciones</h5>
+                                <p class="text-muted">Gestiona las comunicaciones con los padres</p>
+                                <a href="enviar_notificacion.php" class="btn btn-primary">
+                                    <i class="bi bi-send me-2"></i>
+                                    Enviar Notificación
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="section" id="reportes">
             <div class="card">

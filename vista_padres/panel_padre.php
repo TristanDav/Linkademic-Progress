@@ -97,7 +97,7 @@ if (empty($hijos)) {
     </div>
     
     <div class="sidebar" id="sidebar">
-        <a href="#" onclick="showSection('perfil')">
+        <a href="#" onclick="showSection('perfil')" class="active">
             <i class="bi bi-person-circle"></i> Mi Perfil
         </a>
         <a href="#" onclick="showSection('materias')">
@@ -108,6 +108,9 @@ if (empty($hijos)) {
         </a>
         <a href="#" onclick="showSection('estadisticas')">
             <i class="bi bi-graph-up"></i> Estadísticas
+        </a>
+        <a href="notificaciones.php">
+            <i class="bi bi-bell"></i> Notificaciones
         </a>
         <a href="#" onclick="window.location.href='../index.html'" style="margin-top: 20px; color: #dc3545;">
             <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
@@ -124,7 +127,9 @@ if (empty($hijos)) {
                 </h2>
                 <div class="row">
                     <div class="col-md-3 text-center">
-                        <img src="https://via.placeholder.com/150x150/17a2b8/ffffff?text=<?= strtoupper(substr($nombre_padre, 0, 1) . substr($apellido_padre, 0, 1)) ?>" alt="Foto del Padre" class="profile-img">
+                        <div class="profile-icon-container mb-3">
+                            <i class="bi bi-person-circle profile-icon"></i>
+                        </div>
                         <h4 class="text-primary mt-3"><?= htmlspecialchars($nombre_padre . ' ' . $apellido_padre) ?></h4>
                     </div>
                     <div class="col-md-9">
@@ -160,7 +165,9 @@ if (empty($hijos)) {
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-md-4 text-center">
-                                                <img src="https://via.placeholder.com/100x100/17a2b8/ffffff?text=<?= strtoupper(substr($hijo['nombre'], 0, 1) . substr($hijo['apellido'], 0, 1)) ?>" alt="<?= htmlspecialchars($hijo['nombre']) ?>" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
+                                                <div class="profile-icon-container mb-3">
+                                                    <i class="bi bi-person-circle profile-icon"></i>
+                                                </div>
                                             </div>
                                             <div class="col-md-8">
                                                 <h5 class="card-title"><?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?></h5>
@@ -545,7 +552,9 @@ if (empty($hijos)) {
                     </button>
                 </div>
                 <div class="text-center mb-4">
-                    <img src="https://via.placeholder.com/120x120/17a2b8/ffffff?text=<?= strtoupper(substr($hijo['nombre'], 0, 1) . substr($hijo['apellido'], 0, 1)) ?>" alt="<?= htmlspecialchars($hijo['nombre']) ?>" class="profile-img">
+                    <div class="profile-icon-container mb-3">
+                        <i class="bi bi-person-circle profile-icon"></i>
+                    </div>
                     <h4 class="text-primary"><?= htmlspecialchars($hijo['nombre'] . ' ' . $hijo['apellido']) ?></h4>
                     <p class="text-muted">
                         <?= htmlspecialchars($hijo['grupo_nombre'] ?: 'Sin grupo asignado') ?> | 
@@ -641,19 +650,6 @@ if (empty($hijos)) {
                                     <span class="badge bg-secondary"><?= date('F Y') ?></span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Tareas Pendientes -->
-                <div class="card mt-4">
-                    <div class="card-header bg-warning text-dark">
-                        <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Tareas Pendientes</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Funcionalidad en desarrollo.</strong> Esta sección mostrará las tareas pendientes de <?= htmlspecialchars($hijo['nombre']) ?> cuando esté implementada.
                         </div>
                     </div>
                 </div>
@@ -768,10 +764,19 @@ if (empty($hijos)) {
         function showSection(id) {
             const sections = document.querySelectorAll('.section');
             const targetSection = document.getElementById(id);
+            const sidebarLinks = document.querySelectorAll('.sidebar a');
             
             if (sections && targetSection) {
                 sections.forEach(sec => sec.classList.remove('active'));
                 targetSection.classList.add('active');
+                
+                // Marcar enlace activo en sidebar
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('onclick') && link.getAttribute('onclick').includes(id)) {
+                        link.classList.add('active');
+                    }
+                });
             }
         }
 

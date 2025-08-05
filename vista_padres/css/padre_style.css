@@ -52,12 +52,20 @@ body {
     border-bottom: 1px solid #e9ecef;
     transition: all 0.3s ease;
     font-weight: 500;
+    position: relative;
 }
 
 .sidebar a:hover { 
     background: #e3f2fd;
     color: #17a2b8;
     border-left: 4px solid #17a2b8;
+}
+
+.sidebar a.active {
+    background: #e3f2fd;
+    color: #17a2b8;
+    border-left: 4px solid #17a2b8;
+    font-weight: 600;
 }
 
 .sidebar a i {
@@ -104,6 +112,44 @@ body {
 .card:hover { 
     transform: translateY(-2px);
     box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+/* Estilos para iconos de perfil */
+.profile-icon-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #17a2b8, #6f42c1);
+    margin: 0 auto;
+    box-shadow: 0 4px 15px rgba(23, 162, 184, 0.3);
+    transition: all 0.3s ease;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.profile-icon-container:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(23, 162, 184, 0.4);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.profile-icon {
+    font-size: 3.5rem;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Para iconos más pequeños en las tarjetas de hijos */
+.card .profile-icon-container {
+    width: 80px;
+    height: 80px;
+    border-width: 2px;
+}
+
+.card .profile-icon {
+    font-size: 2rem;
 }
 
 .profile-img {
@@ -199,4 +245,14 @@ body {
 .stats-card p {
     font-size: 1.1rem;
     opacity: 0.9;
+} 
+
+/* Ajustar tamaños de botones de acciones */
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+}
+
+.btn-sm i {
+    font-size: 1.1rem;
 } 

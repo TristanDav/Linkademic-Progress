@@ -148,9 +148,6 @@ $avisos = [
         <a href="#" onclick="showSection('asistencias')">
             <i class="bi bi-calendar-check"></i> Asistencias
         </a>
-        <a href="#" onclick="showSection('avisos')">
-            <i class="bi bi-megaphone"></i> Avisos
-        </a>
         <a href="#" onclick="showSection('evaluaciones')">
             <i class="bi bi-journal-plus"></i> Evaluaciones
         </a>
@@ -222,10 +219,12 @@ $avisos = [
                 <div class="col-md-3 mb-4">
                     <div class="card text-center acceso-panel">
                         <div class="card-body">
-                            <i class="bi bi-megaphone-fill display-4 text-info mb-3"></i>
-                            <h5 class="card-title">Avisos</h5>
-                            <p class="card-text">Envía avisos importantes a los padres de familia.</p>
-                            <a href="#" onclick="showSection('avisos')" class="btn btn-info text-white">Ver Avisos</a>
+                            <i class="bi bi-journal-plus-fill display-4 text-warning mb-3"></i>
+                            <h5 class="card-title">Evaluaciones</h5>
+                            <p class="card-text">Registra y gestiona las evaluaciones de los estudiantes.</p>
+                            <a href="#" onclick="showSection('evaluaciones')" class="btn btn-warning text-white">
+                                <i class="bi bi-arrow-right me-2"></i>Ver Evaluaciones
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -247,7 +246,6 @@ $avisos = [
                                 <th>Grupo</th>
                                 <th>Asistencias (%)</th>
                                 <th>Promedio</th>
-                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -287,14 +285,6 @@ $avisos = [
                                     <td><?= htmlspecialchars($grupo) ?></td>
                                     <td><?= $porc_asistencia !== '-' ? $porc_asistencia . '%' : '-' ?></td>
                                     <td><?= $promedio !== '-' ? '<span class="badge bg-'.($promedio >= 9 ? 'success' : ($promedio >= 8 ? 'warning' : 'danger')).'">'.$promedio.'</span>' : '<span class="badge bg-secondary">-</span>' ?></td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-success">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             <?php else: ?>
@@ -420,58 +410,7 @@ $avisos = [
             </div>
         </div>
 
-        <div class="section" id="avisos">
-            <div class="card">
-                <h2 class="mb-4 text-primary">
-                    <i class="bi bi-megaphone me-2"></i>
-                    Gestión de Avisos
-                </h2>
-                <div class="row mb-4">
-                    <div class="col-md-8">
-                        <button class="btn btn-primary">
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Nuevo Aviso
-                        </button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Título del Aviso</th>
-                                <th>Fecha</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php foreach ($avisos as $aviso): ?>
-                            <tr>
-                                <td><strong><?= $aviso['titulo'] ?></strong></td>
-                                <td><?= date('d/m/Y', strtotime($aviso['fecha'])) ?></td>
-                                <td>
-                                    <span class="badge bg-<?= $aviso['estado'] == 'Enviado' ? 'success' : 'warning' ?>">
-                                        <?= $aviso['estado'] ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-success">
-                                        <i class="bi bi-pencil"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
+
 
         <div class="section" id="evaluaciones">
             <div class="card">
@@ -525,8 +464,12 @@ $avisos = [
                                     <td><?= htmlspecialchars($ev['descripcion']) ?></td>
                                     <td><?= date('d/m/Y', strtotime($ev['fecha'])) ?></td>
                                     <td>
-                                        <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
-                                        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                        <button class="btn btn-sm btn-outline-success" onclick="editarEvaluacion(<?= $ev['id'] ?>)" title="Editar evaluación">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarEvaluacion(<?= $ev['id'] ?>, '<?= htmlspecialchars($ev['nombre']) ?>')" title="Eliminar evaluación">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -551,6 +494,20 @@ $avisos = [
         function showSection(id) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        }
+
+        // Función para editar evaluación
+        function editarEvaluacion(evaluacionId) {
+            // Redirigir al formulario de edición con los datos de la evaluación
+            window.location.href = `registrar_evaluaciones.php?editar=${evaluacionId}`;
+        }
+
+        // Función para eliminar evaluación
+        function eliminarEvaluacion(evaluacionId, nombreEvaluacion) {
+            if (confirm(`¿Estás seguro de que deseas eliminar la evaluación "${nombreEvaluacion}"?\n\nEsta acción no se puede deshacer.`)) {
+                // Redirigir para eliminar la evaluación
+                window.location.href = `registrar_evaluaciones.php?eliminar=${evaluacionId}`;
+            }
         }
     </script>
 </body>
