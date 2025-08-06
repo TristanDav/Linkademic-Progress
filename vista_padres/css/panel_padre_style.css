@@ -1,0 +1,39 @@
+/* Estilos específicos para panel_padre.php */
+
+.calendario-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    gap: 8px;
+}
+
+.dia-semana {
+    font-weight: bold;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.dia-calendario {
+    padding: 12px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.dia-normal {
+    background: #f8f9fa;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+}
+
+.dia-asistencia {
+    background: #198754;
+    color: white;
+    border: 1px solid #198754;
+}
+
+.dia-falta {
+    background: #dc3545;
+    color: white;
+    border: 1px solid #dc3545;
+} 

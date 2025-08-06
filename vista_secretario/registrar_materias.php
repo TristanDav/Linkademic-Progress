@@ -1,6 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
+require_once '../auth_secretario.php';
 
 $errores = [];
 $exito = false;
@@ -76,25 +75,14 @@ while ($row = $res->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/secretario_style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <style>
-        body { background: #18191a; }
-        .main-card { max-width: 700px; margin: 0 auto; }
-        .welcome-card { border-radius: 18px; margin-bottom: 32px; padding: 32px 32px 24px 32px; }
-        .form-card { border-radius: 16px; padding: 32px 32px 24px 32px; margin-bottom: 32px; }
-        .form-label { color: #fff; font-weight: 500; }
-        .form-control, .form-select { background: #23272b; color: #fff; border: 1px solid #444; }
-        .form-control:focus, .form-select:focus { border-color: #9c27b0; box-shadow: 0 0 0 0.2rem rgba(156,39,176,.15); }
-        .btn-primary { background: #9c27b0; border-color: #9c27b0; }
-        .btn-primary:hover { background: #7b1fa2; border-color: #7b1fa2; }
-        .text-primary { color: #e1aaff !important; }
-    </style>
+    <link rel="stylesheet" href="css/registrar_materias_style.css">
 </head>
 <body>
 <div class="container py-5">
     <div class="main-card">
         <div class="card mb-4 welcome-card">
-            <h2 class="mb-1" style="font-size:2.4rem;"><i class="bi bi-book me-2"></i> Gestión de Materias</h2>
-            <p class="mb-0" style="font-size:1.2rem;">Registra, edita y elimina materias escolares.</p>
+            <h2 class="mb-1 welcome-title"><i class="bi bi-book me-2"></i> Gestión de Materias</h2>
+            <p class="mb-0 welcome-subtitle">Registra, edita y elimina materias escolares.</p>
         </div>
         <div class="card form-card shadow-sm bg-dark">
             <h4 class="mb-3 text-primary"><i class="bi bi-plus-circle"></i> <?= $editando ? 'Editar Materia' : 'Registrar Nueva Materia' ?></h4>

@@ -1,13 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Verificar si el padre está logueado
-if (!isset($_SESSION['padre_id'])) {
-    http_response_code(401);
-    echo json_encode(['error' => 'No autorizado']);
-    exit();
-}
+require_once '../auth_padre.php';
 
 // Verificar que se proporcione el ID del alumno
 if (!isset($_GET['alumno_id'])) {

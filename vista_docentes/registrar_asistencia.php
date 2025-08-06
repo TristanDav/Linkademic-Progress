@@ -1,12 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Seguridad: solo docentes logueados
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login_docentes.php');
-    exit();
-}
+require_once '../auth_docente.php';
 $usuario_id = $_SESSION['usuario_id'];
 
 // Obtener grupo asignado
@@ -96,14 +89,7 @@ if (isset($_POST['guardar_asistencia'])) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/docente_style.css">
-    <style>
-        body { background: #e8f5e9; }
-        .asistencia-card { border-left: 6px solid #43a047; box-shadow: 0 2px 8px #0001; }
-        .asistencia-table th, .asistencia-table td { vertical-align: middle; }
-        .calendar-label { font-weight: bold; color: #388e3c; }
-        .btn-guardar { background: #43a047; border: none; }
-        .btn-guardar:hover { background: #388e3c; }
-    </style>
+    <link rel="stylesheet" href="css/registrar_asistencia_style.css">
 </head>
 <body>
 <div class="container py-4">

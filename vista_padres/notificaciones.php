@@ -1,13 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Verificar que el usuario esté logueado como padre
-if (!isset($_SESSION['padre_id'])) {
-    header('Location: ../login_padres.php');
-    exit;
-}
-
+require_once '../auth_padre.php';
 $usuario_id = $_SESSION['padre_id'];
 
 // Obtener el id de la tabla padres basado en el usuario_id
@@ -55,78 +47,7 @@ $stmt->close();
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="css/padre_style.css" rel="stylesheet">
-    <style>
-        .notificacion {
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .notificacion:hover {
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-            transform: translateY(-2px);
-        }
-
-        .notificacion.no-leido {
-            background-color: #e3f2fd;
-            border-left: 5px solid #2196f3;
-        }
-
-        .notificacion.leido {
-            border-left: 5px solid #4caf50;
-        }
-
-        .notificacion h4 {
-            color: #1976d2;
-            margin-bottom: 10px;
-        }
-
-        .notificacion p {
-            color: #424242;
-            line-height: 1.6;
-        }
-
-        .notificacion small {
-            color: #757575;
-            font-size: 0.85em;
-        }
-
-        .btn-leer-todo {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 25px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-leer-todo:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            color: white;
-        }
-
-        .navbar {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #757575;
-        }
-
-        .empty-state i {
-            font-size: 4rem;
-            color: #e0e0e0;
-            margin-bottom: 20px;
-        }
-    </style>
+    <link href="css/notificaciones_style.css" rel="stylesheet">
 </head>
 <body>
     <!-- Navbar -->
@@ -191,7 +112,7 @@ $stmt->close();
                                                 <i class="bi bi-calendar me-1"></i>
                                                 <?= date('d/m/Y H:i', strtotime($notif['fecha'])); ?> 
                                                 | 
-                                                <i class="bi bi-circle-fill me-1" style="color: <?= $notif['leido'] ? '#4caf50' : '#ff9800' ?>;"></i>
+                                                <i class="bi bi-circle-fill me-1 notification-status-<?= $notif['leido'] ? 'leido' : 'no-leido' ?>"></i>
                                                 <?= $notif['leido'] ? 'Leído' : 'No leído'; ?>
                                             </small>
                                         </div>

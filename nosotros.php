@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/nosotros_style.css">
 </head>
 <body>
     <!-- Navbar -->
@@ -42,12 +43,12 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <section class="hero-section">
         <div class="container text-center">
             <h1 class="display-4 fw-bold mb-4 text-white">Sobre Nosotros</h1>
             <p class="lead mb-4 text-white">Conoce más sobre nuestra institución y el equipo que desarrolló este sistema</p>
             <div class="mt-4">
-                <i class="bi bi-people-fill text-white" style="font-size: 4rem; opacity: 0.8;"></i>
+                <i class="bi bi-people-fill text-white hero-icon"></i>
             </div>
         </div>
     </section>
@@ -61,7 +62,7 @@
                     <div class="card h-100 service-card">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-bullseye text-primary" style="font-size: 3rem;"></i>
+                                <i class="bi bi-bullseye text-primary mision-icon"></i>
                             </div>
                             <h4 class="card-title fw-bold text-primary">Misión</h4>
                             <p class="card-text">Formar estudiantes integrales con valores sólidos, habilidades académicas y sociales, preparándolos para enfrentar los desafíos del futuro con responsabilidad y excelencia.</p>
@@ -74,7 +75,7 @@
                     <div class="card h-100 service-card">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-eye text-success" style="font-size: 3rem;"></i>
+                                <i class="bi bi-eye text-success vision-icon"></i>
                             </div>
                             <h4 class="card-title fw-bold text-success">Visión</h4>
                             <p class="card-text">Ser reconocida como una institución educativa líder en la formación de niños y niñas con alto nivel académico, valores éticos y compromiso social.</p>
@@ -87,7 +88,7 @@
                     <div class="card h-100 service-card">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <i class="bi bi-heart text-danger" style="font-size: 3rem;"></i>
+                                <i class="bi bi-heart text-danger valores-icon"></i>
                             </div>
                             <h4 class="card-title fw-bold text-danger">Valores</h4>
                             <p class="card-text">Respeto, responsabilidad, honestidad, solidaridad, perseverancia y excelencia académica son los pilares que guían nuestro quehacer educativo.</p>
@@ -171,7 +172,7 @@
                     <div class="card team-card h-100">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <img src="https://via.placeholder.com/150x150/0d6efd/ffffff?text=Dev1" alt="Desarrollador 1" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/150x150/0d6efd/ffffff?text=Dev1" alt="Desarrollador 1" class="rounded-circle team-member-img">
                             </div>
                             <h5 class="card-title fw-bold">Desarrollador 1</h5>
                             <p class="text-muted mb-2">Frontend Developer</p>
@@ -193,7 +194,7 @@
                     <div class="card team-card h-100">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <img src="https://via.placeholder.com/150x150/198754/ffffff?text=Dev2" alt="Desarrollador 2" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/150x150/198754/ffffff?text=Dev2" alt="Desarrollador 2" class="rounded-circle team-member-img">
                             </div>
                             <h5 class="card-title fw-bold">Desarrollador 2</h5>
                             <p class="text-muted mb-2">Backend Developer</p>
@@ -215,7 +216,7 @@
                     <div class="card team-card h-100">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <img src="https://via.placeholder.com/150x150/ffc107/000000?text=Dev3" alt="Desarrollador 3" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/150x150/ffc107/000000?text=Dev3" alt="Desarrollador 3" class="rounded-circle team-member-img">
                             </div>
                             <h5 class="card-title fw-bold">Desarrollador 3</h5>
                             <p class="text-muted mb-2">Full Stack Developer</p>
@@ -237,7 +238,7 @@
                     <div class="card team-card h-100">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <img src="https://via.placeholder.com/150x150/dc3545/ffffff?text=Dev4" alt="Desarrollador 4" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/150x150/dc3545/ffffff?text=Dev4" alt="Desarrollador 4" class="rounded-circle team-member-img">
                             </div>
                             <h5 class="card-title fw-bold">Desarrollador 4</h5>
                             <p class="text-muted mb-2">UI/UX Designer</p>
@@ -259,7 +260,7 @@
                     <div class="card team-card h-100">
                         <div class="card-body text-center p-4">
                             <div class="mb-3">
-                                <img src="https://via.placeholder.com/150x150/6f42c1/ffffff?text=Dev5" alt="Desarrollador 5" class="rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+                                <img src="https://via.placeholder.com/150x150/6f42c1/ffffff?text=Dev5" alt="Desarrollador 5" class="rounded-circle team-member-img">
                             </div>
                             <h5 class="card-title fw-bold">Desarrollador 5</h5>
                             <p class="text-muted mb-2">Project Manager</p>

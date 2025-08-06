@@ -1,12 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Seguridad: solo docentes logueados
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login_docentes.php');
-    exit();
-}
+require_once '../auth_docente.php';
 $usuario_id = $_SESSION['usuario_id'];
 
 // Obtener grupo asignado
@@ -106,6 +99,7 @@ if ($eval_id) {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/docente_style.css">
+    <link rel="stylesheet" href="css/registrar_calificaciones_style.css">
 </head>
 <body>
     <div class="container py-4">
@@ -139,8 +133,8 @@ if ($eval_id) {
                             <?php foreach ($alumnos as $alumno): ?>
                             <tr>
                                 <td><?= htmlspecialchars($alumno['apellido'] . ' ' . $alumno['nombre']) ?></td>
-                                <td style="max-width:120px;">
-                                    <input type="number" step="0.01" min="0" max="10" name="calif[<?= $alumno['id'] ?>]" class="form-control" value="<?= isset($calificaciones[$alumno['id']]) ? $calificaciones[$alumno['id']] : '' ?>">
+                                <td>
+                                    <input type="number" step="0.01" min="0" max="10" name="calif[<?= $alumno['id'] ?>]" class="form-control calificacion-input" value="<?= isset($calificaciones[$alumno['id']]) ? $calificaciones[$alumno['id']] : '' ?>">
                                 </td>
                             </tr>
                             <?php endforeach; ?>

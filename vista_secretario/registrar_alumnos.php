@@ -1,6 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
+require_once '../auth_secretario.php';
 
 // Obtener grupos
 $grupos = [];
@@ -98,9 +97,10 @@ while ($row = $res->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="css/secretario_style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/registrar_alumnos_style.css">
 </head>
 <body>
-<div class="container py-5" style="max-width: 900px;">
+<div class="container py-5">
     <div class="card mb-4 welcome-card">
         <h2 class="mb-0"><i class="bi bi-people"></i> Gestión de Alumnos</h2>
         <p class="mb-0">Registra, edita y elimina alumnos del sistema.</p>

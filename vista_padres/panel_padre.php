@@ -1,13 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Verificar si el padre está logueado
-if (!isset($_SESSION['padre_id'])) {
-    header('Location: ../login_padres.php');
-    exit();
-}
-
+require_once '../auth_padre.php';
 $padre_id = $_SESSION['padre_id'];
 
 // Obtener datos del padre
@@ -89,6 +81,7 @@ if (empty($hijos)) {
     <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/styles.css">
     <link rel="stylesheet" href="css/padre_style.css">
+    <link rel="stylesheet" href="css/panel_padre_style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
@@ -112,7 +105,7 @@ if (empty($hijos)) {
         <a href="notificaciones.php">
             <i class="bi bi-bell"></i> Notificaciones
         </a>
-        <a href="#" onclick="window.location.href='../index.html'" style="margin-top: 20px; color: #dc3545;">
+        <a href="../logout.php" style="margin-top: 20px; color: #dc3545;">
             <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
         </a>
     </div>
@@ -720,23 +713,23 @@ if (empty($hijos)) {
             const diasMes = new Date(año, mes + 1, 0).getDate();
             const primerDia = new Date(año, mes, 1).getDay();
 
-            let html = `<div style="display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; gap: 8px;">`;
+            let html = `<div class="calendario-grid">`;
             const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-            diasSemana.forEach(d => html += `<div style="font-weight:bold; padding: 10px; background: #f8f9fa; border-radius: 6px;">${d}</div>`);
+            diasSemana.forEach(d => html += `<div class="dia-semana">${d}</div>`);
 
             for (let i = 0; i < primerDia; i++) html += `<div></div>`;
 
             for (let dia = 1; dia <= diasMes; dia++) {
                 const fechaStr = `${año}-${String(mes + 1).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
-                let estilo = 'background: #f8f9fa; color: #6c757d; border: 1px solid #dee2e6;';
+                let clase = 'dia-calendario dia-normal';
                 
                 if (asistenciasData.asistencias.includes(fechaStr)) {
-                    estilo = 'background: #198754; color: white; border: 1px solid #198754;';
+                    clase = 'dia-calendario dia-asistencia';
                 } else if (asistenciasData.faltas.includes(fechaStr)) {
-                    estilo = 'background: #dc3545; color: white; border: 1px solid #dc3545;';
+                    clase = 'dia-calendario dia-falta';
                 }
                 
-                html += `<div style="padding: 12px; border-radius: 8px; ${estilo}; font-weight: 500;">${dia}</div>`;
+                html += `<div class="${clase}">${dia}</div>`;
             }
 
             html += '</div>';

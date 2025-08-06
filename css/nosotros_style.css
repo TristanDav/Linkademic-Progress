@@ -1,0 +1,28 @@
+/* Estilos específicos para nosotros.php */
+
+.hero-section {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.hero-icon {
+    font-size: 4rem;
+    opacity: 0.8;
+}
+
+.mision-icon {
+    font-size: 3rem;
+}
+
+.vision-icon {
+    font-size: 3rem;
+}
+
+.valores-icon {
+    font-size: 3rem;
+}
+
+.team-member-img {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+} 

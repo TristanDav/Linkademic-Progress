@@ -3,6 +3,12 @@ session_start();
 include('conexion.php');
 
 $error = '';
+
+// Mostrar mensaje de timeout si la sesión expiró
+if (isset($_GET['timeout'])) {
+    $error = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $usuario = trim($_POST['usuario'] ?? '');
     $contrasena = trim($_POST['contrasena'] ?? '');

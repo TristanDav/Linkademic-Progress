@@ -1,12 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Seguridad: solo docentes logueados
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login_docentes.php');
-    exit();
-}
+require_once '../auth_docente.php';
 $usuario_id = $_SESSION['usuario_id'];
 
 // Obtener datos del docente y grupo asignado

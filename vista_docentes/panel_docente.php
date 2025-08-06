@@ -1,12 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
-
-// Obtener el ID de usuario desde la sesión
-if (!isset($_SESSION['usuario_id'])) {
-    header('Location: ../login_docentes.php');
-    exit();
-}
+require_once '../auth_docente.php';
 $usuario_id = $_SESSION['usuario_id'];
 
 // Consultar datos básicos del docente y su grupo asignado
@@ -151,7 +144,7 @@ $avisos = [
         <a href="#" onclick="showSection('evaluaciones')">
             <i class="bi bi-journal-plus"></i> Evaluaciones
         </a>
-        <a href="#" onclick="window.location.href='../index.html'" style="margin-top: 20px; color: #dc3545;">
+        <a href="../logout.php" style="margin-top: 20px; color: #dc3545;">
             <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
         </a>
     </div>

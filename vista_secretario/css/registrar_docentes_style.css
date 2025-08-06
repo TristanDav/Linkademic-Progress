@@ -1,0 +1,60 @@
+/* Estilos específicos para registrar_docentes.php */
+
+body { 
+    background: #18191a; 
+}
+
+.main-card { 
+    max-width: 800px; 
+    margin: 0 auto; 
+}
+
+.welcome-card { 
+    border-radius: 18px; 
+    margin-bottom: 32px; 
+    padding: 32px 32px 24px 32px; 
+}
+
+.form-card { 
+    border-radius: 16px; 
+    padding: 32px 32px 24px 32px; 
+    margin-bottom: 32px; 
+}
+
+.form-label { 
+    color: #fff; 
+    font-weight: 500; 
+}
+
+.form-control, .form-select { 
+    background: #23272b; 
+    color: #fff; 
+    border: 1px solid #444; 
+}
+
+.form-control:focus, .form-select:focus { 
+    border-color: #9c27b0; 
+    box-shadow: 0 0 0 0.2rem rgba(156,39,176,.15); 
+}
+
+.btn-primary { 
+    background: #9c27b0; 
+    border-color: #9c27b0; 
+}
+
+.btn-primary:hover { 
+    background: #7b1fa2; 
+    border-color: #7b1fa2; 
+}
+
+.text-primary { 
+    color: #e1aaff !important; 
+}
+
+.welcome-title {
+    font-size: 2.4rem;
+}
+
+.welcome-subtitle {
+    font-size: 1.2rem;
+} 

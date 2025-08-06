@@ -1,0 +1,28 @@
+/* Estilos específicos para registrar_asistencia.php */
+
+body { 
+    background: #e8f5e9; 
+}
+
+.asistencia-card { 
+    border-left: 6px solid #43a047; 
+    box-shadow: 0 2px 8px #0001; 
+}
+
+.asistencia-table th, .asistencia-table td { 
+    vertical-align: middle; 
+}
+
+.calendar-label { 
+    font-weight: bold; 
+    color: #388e3c; 
+}
+
+.btn-guardar { 
+    background: #43a047; 
+    border: none; 
+}
+
+.btn-guardar:hover { 
+    background: #388e3c; 
+} 

@@ -1,6 +1,5 @@
 <?php
-session_start();
-require_once '../conexion.php';
+require_once '../auth_secretario.php';
 
 // Obtener alumnos con grupo y tutor
 $sql = "SELECT a.id, a.nombre, a.apellido, a.fecha_nacimiento, g.nombre AS grupo, 
@@ -87,10 +86,7 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
         <a href="#" onclick="showSection('notificaciones')">
             <i class="bi bi-bell"></i> Notificaciones
         </a>
-        <a href="#" onclick="showSection('reportes')">
-            <i class="bi bi-graph-up"></i> Reportes
-        </a>
-        <a href="#" onclick="window.location.href='../index.html'" style="margin-top: 20px; color: #dc3545;">
+        <a href="../logout.php" style="margin-top: 20px; color: #dc3545;">
             <i class="bi bi-box-arrow-left"></i> Cerrar Sesión
         </a>
     </div>
@@ -146,10 +142,10 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                 <div class="col-md-3 mb-4">
                     <div class="card text-center acceso-panel">
                         <div class="card-body">
-                            <i class="bi bi-graph-up-arrow display-4 text-info mb-3"></i>
-                            <h5 class="card-title">Reportes</h5>
-                            <p class="card-text">Genera reportes y estadísticas del sistema.</p>
-                            <a href="#" onclick="showSection('reportes')" class="btn btn-info text-white">Ver Reportes</a>
+                            <i class="bi bi-bell-fill display-4 text-info mb-3"></i>
+                            <h5 class="card-title">Notificaciones</h5>
+                            <p class="card-text">Gestiona las comunicaciones con los padres.</p>
+                            <a href="#" onclick="showSection('notificaciones')" class="btn btn-info text-white">Ver Notificaciones</a>
                         </div>
                     </div>
                 </div>
@@ -240,9 +236,12 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><?= htmlspecialchars($padre['observaciones']) ?></td>
                                 <td><span class="badge bg-info"><?= $hijos_por_padre[$padre['id']] ?? 0 ?></span></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
-                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="editarPadre(<?= $padre['id'] ?>)" title="Editar padre">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarPadre(<?= $padre['id'] ?>, '<?= htmlspecialchars($padre['nombre'] . ' ' . $padre['apellido']) ?>')" title="Eliminar padre">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -283,9 +282,12 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><strong><?= htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']) ?></strong></td>
                                 <td><?= htmlspecialchars($docente['correo']) ?></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
-                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="editarDocente(<?= $docente['id'] ?>)" title="Editar docente">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarDocente(<?= $docente['id'] ?>, '<?= htmlspecialchars($docente['nombre'] . ' ' . $docente['apellido']) ?>')" title="Eliminar docente">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -326,9 +328,12 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                                 <td><?= htmlspecialchars($grupo['nombre']) ?></td>
                                 <td><?= htmlspecialchars($grupo['docente_nombre'] . ' ' . $grupo['docente_apellido']) ?></td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></button>
-                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                                    <button class="btn btn-sm btn-outline-success" onclick="editarGrupo(<?= $grupo['id'] ?>)" title="Editar grupo">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarGrupo(<?= $grupo['id'] ?>, '<?= htmlspecialchars($grupo['nombre']) ?>')" title="Eliminar grupo">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <?php endforeach; endif; ?>
@@ -357,16 +362,25 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                                 <th>#</th>
                                 <th>Nombre</th>
                                 <th>Descripción</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                 <?php if (empty($materias)): ?>
-                    <tr><td colspan="3" class="text-center">No hay materias registradas.</td></tr>
+                    <tr><td colspan="4" class="text-center">No hay materias registradas.</td></tr>
                 <?php else: foreach ($materias as $i => $m): ?>
                     <tr>
                         <td><?= $i+1 ?></td>
                         <td><?= htmlspecialchars($m['nombre']) ?></td>
                         <td><?= htmlspecialchars($m['descripcion']) ?></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-success" onclick="editarMateria(<?= $m['id'] ?>)" title="Editar materia">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarMateria(<?= $m['id'] ?>, '<?= htmlspecialchars($m['nombre']) ?>')" title="Eliminar materia">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
                     </tr>
                 <?php endforeach; endif; ?>
                 </tbody>
@@ -411,96 +425,13 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
                     <div class="col-md-4">
                         <div class="card">
                             <div class="card-body text-center">
-                                <i class="bi bi-bell-fill text-primary" style="font-size: 3rem;"></i>
+                                <i class="bi bi-bell-fill text-primary notification-icon"></i>
                                 <h5 class="mt-3">Notificaciones</h5>
                                 <p class="text-muted">Gestiona las comunicaciones con los padres</p>
                                 <a href="enviar_notificacion.php" class="btn btn-primary">
                                     <i class="bi bi-send me-2"></i>
                                     Enviar Notificación
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="section" id="reportes">
-            <div class="card">
-                <h2 class="mb-4 text-primary">
-                    <i class="bi bi-graph-up me-2"></i>
-                    Reportes y Estadísticas
-                </h2>
-                <div class="row">
-                    <div class="col-md-3 mb-4">
-                        <div class="card stats-card">
-                            <h3><?= count($alumnos) ?></h3>
-                            <p>Total Alumnos</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card stats-card">
-                            <h3><?= count($padres) ?></h3>
-                            <p>Total Padres</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card stats-card">
-                            <h3><?= count($docentes) ?></h3>
-                            <p>Total Docentes</p>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-4">
-                        <div class="card stats-card">
-                            <h3><?= count($grupos) ?></h3>
-                            <p>Total Grupos</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <h5 class="card-title text-primary">Reportes Disponibles</h5>
-                            <div class="list-group">
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    Reporte de Alumnos por Grado
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    Reporte de Asistencias
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    Reporte de Calificaciones
-                                </a>
-                                <a href="#" class="list-group-item list-group-item-action">
-                                    <i class="bi bi-file-earmark-text me-2"></i>
-                                    Reporte de Docentes
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="card">
-                            <h5 class="card-title text-primary">Acciones Rápidas</h5>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary">
-                                    <i class="bi bi-download me-2"></i>
-                                    Exportar Datos
-                                </button>
-                                <button class="btn btn-outline-success">
-                                    <i class="bi bi-printer me-2"></i>
-                                    Imprimir Reportes
-                                </button>
-                                <button class="btn btn-outline-info">
-                                    <i class="bi bi-gear me-2"></i>
-                                    Configuración del Sistema
-                                </button>
-                                <button class="btn btn-outline-warning">
-                                    <i class="bi bi-shield-check me-2"></i>
-                                    Respaldo de Datos
-                                </button>
                             </div>
                         </div>
                     </div>
@@ -520,6 +451,50 @@ $materias = $res_materias ? $res_materias->fetch_all(MYSQLI_ASSOC) : [];
         function showSection(id) {
             document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
             document.getElementById(id).classList.add('active');
+        }
+
+        // Funciones para editar padres
+        function editarPadre(padreId) {
+            window.location.href = `registrar_padres.php?editar=${padreId}`;
+        }
+
+        function eliminarPadre(padreId, nombrePadre) {
+            if (confirm(`¿Estás seguro de que deseas eliminar al padre "${nombrePadre}"?\n\nEsta acción no se puede deshacer.`)) {
+                window.location.href = `registrar_padres.php?eliminar=${padreId}`;
+            }
+        }
+
+        // Funciones para editar docentes
+        function editarDocente(docenteId) {
+            window.location.href = `registrar_docentes.php?editar=${docenteId}`;
+        }
+
+        function eliminarDocente(docenteId, nombreDocente) {
+            if (confirm(`¿Estás seguro de que deseas eliminar al docente "${nombreDocente}"?\n\nEsta acción no se puede deshacer.`)) {
+                window.location.href = `registrar_docentes.php?eliminar=${docenteId}`;
+            }
+        }
+
+        // Funciones para editar grupos
+        function editarGrupo(grupoId) {
+            window.location.href = `registrar_grupos.php?editar=${grupoId}`;
+        }
+
+        function eliminarGrupo(grupoId, nombreGrupo) {
+            if (confirm(`¿Estás seguro de que deseas eliminar el grupo "${nombreGrupo}"?\n\nEsta acción no se puede deshacer.`)) {
+                window.location.href = `registrar_grupos.php?eliminar=${grupoId}`;
+            }
+        }
+
+        // Funciones para editar materias
+        function editarMateria(materiaId) {
+            window.location.href = `registrar_materias.php?editar=${materiaId}`;
+        }
+
+        function eliminarMateria(materiaId, nombreMateria) {
+            if (confirm(`¿Estás seguro de que deseas eliminar la materia "${nombreMateria}"?\n\nEsta acción no se puede deshacer.`)) {
+                window.location.href = `registrar_materias.php?eliminar=${materiaId}`;
+            }
         }
     </script>
 </body>
